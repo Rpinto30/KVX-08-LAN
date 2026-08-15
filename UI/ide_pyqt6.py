@@ -106,7 +106,6 @@ class LineNumberArea(QWidget):
 # API publica que usaran tanto el simulador como el futuro automata.
 # ==============================================================================
 class CodeEditor(QPlainTextEdit):
-
     errores_cambiaron = pyqtSignal(dict)     # {linea: mensaje}
     breakpoints_cambiaron = pyqtSignal(set)  # {lineas}
 
@@ -337,77 +336,7 @@ class CodeEditor(QPlainTextEdit):
     # VALIDADOR BASICO EN TIEMPO REAL
     # --------------------------------------------------------------------
     def analizar_sintaxis_basico(self):
-        nuevos_errores: dict[int, str] = {}
-        lineas = self.toPlainText().split("\n")
-
-        for numero, linea in enumerate(lineas, start=1):
-            mensaje = self._validar_linea_basica(linea)
-            if mensaje:
-                nuevos_errores[numero] = mensaje
-
-        self.lineas_con_error = nuevos_errores
-        self.highlight_current_line()
-        self.line_number_area.update()
-        self.errores_cambiaron.emit(self.lineas_con_error)
-
-    def _validar_linea_basica(self, linea: str) -> str | None:
-        texto = re.split(r"#|//", linea, maxsplit=1)[0].strip()
-        if not texto:
-            return None
-
-        if texto.count("(") != texto.count(")"):
-            return "Parentesis sin cerrar"
-
-        if texto.endswith(","):
-            return "Coma sobrante al final de la linea"
-
-        coincidencia_etiqueta = re.match(r"^([A-Za-z_][A-Za-z0-9_]*):\s*(.*)$", texto)
-        if coincidencia_etiqueta:
-            resto = coincidencia_etiqueta.group(2).strip()
-            if not resto:
-                return None
-            texto = resto
-
-        if texto.startswith("."):
-            directiva = texto.split()[0].lower()
-            if directiva not in self.DIRECTIVAS_VALIDAS:
-                return f"Directiva desconocida: '{directiva}'"
-            return None
-
-        mnemonico = re.split(r"[\s,]+", texto)[0].lower()
-        if mnemonico not in self.INSTRUCCIONES_VALIDAS:
-            return f"Instruccion desconocida: '{mnemonico}'"
-
-        return None
-
-    # ======================================================================
-    # INTEGRACION AUTOMATA / JSON
-    # ----------------------------------------------------------------------
-    # import json
-    #
-    # def cargar_automata(self, ruta_json: str):
-    #     with open(ruta_json, "r", encoding="utf-8") as f:
-    #         self.definicion_automata = json.load(f)
-    #     # self.definicion_automata contendria algo como:
-    #     # {
-    #     #   "estados": [...], "estado_inicial": "q0",
-    #     #   "estados_aceptacion": [...],
-    #     #   "transiciones": { "q0": {"letra": "q1", ...}, ... }
-    #     # }
-    #
-    # def analizar_sintaxis_automata(self):
-    #     nuevos_errores = {}
-    #     lineas = self.toPlainText().split("\n")
-    #     for i, linea in enumerate(lineas, start=1):
-    #         # Recorrer self.definicion_automata caracter por caracter.
-    #         # Si es invalida: nuevos_errores[i] = "Descripcion del error"
-    #         pass
-    #     self.lineas_con_error = nuevos_errores
-    #     self.highlight_current_line()
-    #     self.line_number_area.update()
-    #     self.errores_cambiaron.emit(self.lineas_con_error)
-    # ======================================================================
-
+        pass
 
 # ==============================================================================
 # SECCION: BOTON DE BARRA DE HERRAMIENTAS (dos lineas: accion + atajo)
@@ -487,14 +416,14 @@ class IDEWindow(QMainWindow):
         self._modificado = False
         self.snapshot_codigo: str | None = None
         self.linea_actual_ejecucion = 0
-        self.tema_actual = "matrix"
-        self._paleta_actual = self.PALETAS["matrix"]
+        self.tema_actual = "ctos"
+        self._paleta_actual = self.PALETAS["ctos"]
 
         self.timer_continue = QTimer(self)
         self.timer_continue.timeout.connect(self._paso_automatico)
 
         self._setup_ui()
-        self._aplicar_tema("matrix")
+        self._aplicar_tema("ctos")
         self._configurar_ornamentos()
         self._reproducir_secuencia_arranque()
 
@@ -786,7 +715,9 @@ class IDEWindow(QMainWindow):
 
         boton_compilar = QPushButton("Compile and Load (F5)")
         boton_compilar.setObjectName("botonCompilar")
-        boton_compilar.clicked.connect(self._on_compilar)
+        boton_compilar.setEnabled(False)
+        #boton_compilar.clicked.connect(self._on_compilar)
+        
         layout_cabecera.addWidget(boton_compilar)
 
         layout_cabecera.addWidget(QLabel("Language:"))
