@@ -1,0 +1,48 @@
+digraph Grafico7 {
+    rankdir=LR;
+    labelloc="t";
+    label="Diagrama Validacion de Cadenas en Bucles\n\n";
+    fontsize=16;
+    fontname="Arial Bold";
+    node [fontname="Arial", fontsize=12, penwidth=1.5];
+    edge [fontname="Arial", fontsize=11, penwidth=1.5];
+
+    inicio [shape=none, label="", width=0, height=0];
+    q0 [shape=doublecircle, label="q0"];
+    q17 [shape=circle, label="q17"];
+    q14 [shape=circle, label="q14"];
+    boolean [shape=ellipse, label="boolean"];
+    q15 [shape=circle, label="q15"];
+    q18 [shape=circle, label="q18"];
+    cadena [shape=ellipse, label="cadena"];
+
+    leyenda [shape=none, margin=0, label=<
+        <table border="0" cellborder="0" cellspacing="2" align="left">
+            <tr><td align="left">q17 = Inicia bucle @</td></tr>
+            <tr><td align="left">q18 = termina bucle #@</td></tr>
+        </table>
+    >, fontsize=11];
+
+    { rank=same; q0; leyenda; }
+    { rank=same; q17; q18; }      // Fija q18 exactamente debajo de q17
+    { rank=same; boolean; cadena; } // Fija cadena exactamente debajo de boolean
+
+    q0 -> leyenda [style=invis, weight=10];
+    q17 -> q18 [style=invis, weight=10];
+    boolean -> cadena [style=invis, weight=10];
+
+    inicio -> q0 [color="red", penwidth=2];
+
+    // Fila horizontal principal (flujo recto)
+    q0 -> q17 [color="#00C853", penwidth=2, weight=10];
+    q17 -> q14 [label=" @", color="#00C853", weight=10];
+    q14 -> boolean [label=" (", color="#00C853", weight=10];
+    boolean -> q15 [label=" )", color="#00C853", weight=10];
+
+    boolean:n -> boolean:n [color="#00C853"];
+    cadena:s -> cadena:s [color="#00C853"];
+
+    q15 -> cadena [color="#00C853", constraint=false];
+    cadena -> q18 [color="#00C853", constraint=false];
+    q18 -> q0 [label=" #@", color="#00C853", constraint=false];
+}
