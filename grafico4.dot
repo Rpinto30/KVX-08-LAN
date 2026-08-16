@@ -1,0 +1,49 @@
+digraph Grafico4 {
+    rankdir=LR;
+    nodesep=0.5;
+    ranksep=0.8;
+
+    labelloc="t";
+    label="Diagrama Validacion de Cadenas Condicion\n\n";
+    fontsize=16;
+    fontname="Arial Bold";
+    node [fontname="Arial", fontsize=12, penwidth=1.5];
+    edge [fontname="Arial", fontsize=11, penwidth=1.5];
+
+    inicio [shape=none, label="", width=0, height=0];
+    c1 [shape=ellipse, label="cadena/0-9"];
+    q22 [shape=circle, label="q22"];
+    q9 [shape=circle, label="q9"];
+    q10 [shape=circle, label="q10"];
+    q11 [shape=circle, label="q11"];
+    q23 [shape=circle, label="q23"];
+    c2 [shape=ellipse, label="cadena/0-9"];
+    q12 [shape=doublecircle, label="q12"];
+    leyenda [shape=none, margin=0, label=<
+        <table border="0" cellborder="0" cellspacing="2" align="left">
+            <tr><td align="left">q9 = espera ||</td></tr>
+            <tr><td align="left">q10 = espera ==</td></tr>
+            <tr><td align="left">q11 = espera &amp;&amp;</td></tr>
+            <tr><td align="left">q22 = espera &lt;</td></tr>
+            <tr><td align="left">q23 = espera &gt;</td></tr>
+        </table>
+    >, fontsize=11];
+
+    { rank=same; c1; leyenda; }
+
+    inicio -> c1 [color="red", penwidth=2];
+
+    c1 -> q22 [label=" <", color="#00C853"];
+    c1 -> q9 [label=" ||", color="#00C853", fontcolor="#00C853"]; 
+    c1 -> q10 [label=" ==", color="#00C853"];
+    c1 -> q11 [label=" &&", color="#00C853"];
+    c1 -> q23 [label=" >", color="#00C853"];
+    q22 -> c2 [color="#00C853"];
+    q9 -> c2 [color="#00C853"];
+    q10 -> c2 [color="#00C853"];
+    q11 -> c2 [color="#00C853"];
+    q23 -> c2 [color="#00C853"];
+
+    // Transición final al estado de aceptación q12
+    c2 -> q12 [color="#00C853", penwidth=2];
+}
