@@ -153,6 +153,14 @@ class CodeEditor(QPlainTextEdit):
             out = self.textCursor().block().text() 
         print(f"Actual: {pos}{command}{out}")
         super().keyPressEvent(event)
+        
+        """
+        Informacion: 
+        Fila y posicion
+        Comando (borrado-/insertado+)
+        Caracter
+        """
+        
 
 
 # ==============================================================================
