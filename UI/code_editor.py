@@ -69,6 +69,8 @@ class CodeEditor(QPlainTextEdit):
 
         self.update_line_number_area_width(0)
         self.highlight_current_line()
+        
+        self.last_char = ''
 
     # --------------------------------------------------------------------
     # Ancho dinamico del gutter (segun cantidad de digitos)
@@ -135,6 +137,22 @@ class CodeEditor(QPlainTextEdit):
             seleccion.cursor.clearSelection()
             selecciones.append(seleccion)
         self.setExtraSelections(selecciones)
+        
+    def keyPressEvent(self, event):
+        self.last_char = event.text()
+        print(f"{self.toPlainText()}")
+        print("=".center(100,'='))
+        command = "+"
+        pos = self.textCursor().position()
+        out = event.text()
+        if event.key() == Qt.Key.Key_Backspace:
+            command = "-"
+            pos -= 1
+        if self.textCursor().position() != len(self.toPlainText()):
+            command = "/"+command
+            out = self.textCursor().block().text() 
+        print(f"Actual: {pos}{command}{out}")
+        super().keyPressEvent(event)
 
 
 # ==============================================================================
@@ -143,7 +161,6 @@ class CodeEditor(QPlainTextEdit):
 # "Editor" que contiene el CodeEditor.
 # ==============================================================================
 class EditorPanel(QWidget):
-
     # Se emite cuando el usuario cambia el tema desde el combobox de esta
     # seccion. IDEWindow debe conectarse a esta senal para aplicar el tema.
     tema_cambiado = pyqtSignal(str)
@@ -194,10 +211,7 @@ class EditorPanel(QWidget):
         tabs_editor.setTabPosition(QTabWidget.TabPosition.South)
 
         self.editor = CodeEditor()
-        self.editor.setPlainText(
-            ".global _start\n_start:\n\tmovi r2, 5\n\taddi r3, r2, 10\n\tret\n"
-        )
-        self.editor.textChanged.connect(self.contenido_modificado.emit)
+        #self.editor.textChanged.connect(self.contenido_modificado.emit)
 
         tabs_editor.addTab(self.editor, "Editor (Ctrl+E)")
 
