@@ -3,8 +3,10 @@
 #include <vector>
 #include <sstream>
 #include <fstream>
+#include <filesystem>
 
 using namespace std;
+namespace fs = std::filesystem;
 
 namespace JsonWritter {
     string escape_json(const string& s) {
@@ -21,31 +23,24 @@ namespace JsonWritter {
         }
         return out.str();
     }
-
-    struct Word_json {
+    struct Transition {
     private:
         string content;
     public:
-        Word_json(
-            string content_,
-            bool output,
-            bool init_quotation,
-            bool init_hyphen,
-            bool contain_names,
-            bool have_digits,
-            bool have_special_charts_digits,
-            bool next_special_chart_between_19
+        Transition(
+            int no,
+            string char_,
+            int actual_state,
+            int new_state,
+            string description
         ) {
             ostringstream oss;
             oss << "{\n"
-                << "\"content\": \"" << escape_json(content_) << "\",\n"
-                << "\"output\": " << static_cast<int>(output) << ",\n"
-                << "\"init_quotation\": " << static_cast<int>(init_quotation) << ",\n"
-                << "\"init_hyphen\": " << static_cast<int>(init_hyphen) << ",\n"
-                << "\"contain_names\": " << static_cast<int>(contain_names) << ",\n"
-                << "\"have_digits\": " << static_cast<int>(have_digits) << ",\n"
-                << "\"have_special_charts_digits\": " << static_cast<int>(have_special_charts_digits) << ",\n"
-                << "\"next_special_chart_between_19\": " << static_cast<int>(next_special_chart_between_19) << "\n"
+                << "\"no\": " << no << ",\n"
+                << "\"char\": \"" << escape_json(char_) << "\",\n"
+                << "\"actual_state\": " << actual_state << ",\n"
+                << "\"new_state\": " << new_state << ",\n"
+                << "\"description\": \"" << escape_json(description) << "\"\n"
                 << "}";
 
             content = oss.str();
@@ -54,90 +49,118 @@ namespace JsonWritter {
         string get_content() const { return content; }
     };
 
-    struct Sentence {
-private:
-    string content;
-    vector<Word_json> words;
-public:
-    Sentence(
-        string content_,
-        bool output,
-        bool init_exclamation,
-        bool end_exclamation,
-        bool init_interogation,
-        bool end_interogation,
-        bool split_by_double_dot,
-        bool end_dot,
-        bool last_letter
-    ) {
-        ostringstream oss;
-        oss << "{\n"
-            << "\"content\": \"" << escape_json(content_) << "\",\n"
-            << "\"output\": " << static_cast<int>(output) << ",\n"
-            << "\"init_exclamation\": " << static_cast<int>(init_exclamation) << ",\n"
-            << "\"end_exclamation\": " << static_cast<int>(end_exclamation) << ",\n"
-            << "\"init_interogation\": " << static_cast<int>(init_interogation) << ",\n"
-            << "\"end_interogation\": " << static_cast<int>(end_interogation) << ",\n"
-            << "\"split_by_double_dot\": " << static_cast<int>(split_by_double_dot) << ",\n"
-            << "\"end_dot\": " << static_cast<int>(end_dot) << ",\n"
-            << "\"last_letter\": " << static_cast<int>(last_letter) << "\n";
-
-        content = oss.str();
-    }
-
-    void set_word(Word_json word) {
-        words.push_back(word);
-    }
-
-    void close_sentence() {
-        content += ",\n\"words\": [\n";
-        for (size_t i = 0; i < words.size(); ++i) {
-            content += words[i].get_content();
-            if (i + 1 < words.size()) content += ",\n";
-        }
-        content += "\n]\n}";
-    }
-
-    string get_content() const { return content; }
-};
-
-    class Json {
+    class TransitionsJson {
     private:
         string content;
-        vector<Sentence> sentences;
+        vector<Transition> transitions;
+        vector<string> errors;
+        bool has_error;
+        bool has_transitions;
     public:
-        Json(bool output) {
+        TransitionsJson() : has_error(false), has_transitions(false){
+            clear();
+        }
+
+        void set_transition(Transition transition) {
+            has_transitions = true;
+            transitions.push_back(transition);
+        }
+
+        /* void generate_transitions(
+            int cantidad,
+            const vector<string>& chars,
+            const vector<int>& actual_states,
+            const vector<int>& new_states,
+            const vector<string>& descriptions
+        ) {
+            for (int i = 0; i < cantidad; ++i) {
+                set_transition(Transition(
+                    i,
+                    chars[i],
+                    actual_states[i],
+                    new_states[i],
+                    descriptions[i]
+                ));
+            }
+        }*/
+
+        void set_error(const string& error_) {
+            errors.push_back(error_);
+            has_error = true;
+        }
+
+        void set_errors(const vector<string>& errors_) {
+            for (const auto& e : errors_) {
+                set_error(e);
+            }
+        }
+
+        void close_json() {
+            if (has_transitions){
+                content += ",\n\"transitions\": [\n";
+                for (size_t i = 0; i < transitions.size(); ++i) {
+                    content += transitions[i].get_content();
+                    if (i + 1 < transitions.size()) content += ",\n";
+                }
+                content += "\n]";
+            }
+            
+
+            if (has_error) {
+                content += ",\n\"error\": [\n";
+                for (size_t i = 0; i < errors.size(); ++i) {
+                    content += "\"" + escape_json(errors[i]) + "\"";
+                    if (i + 1 < errors.size()) content += ",\n";
+                }
+                content += "\n]";
+            }
+            content += "\n}";
+        }
+
+        void create_json(const string& filename = "transitions.json") {
+            ofstream file(filename);
+            if (file.is_open()) {
+                file << content;
+                file.close();
+            }
+        }
+
+        string get_content() const { return content; }
+
+        void clear(){
             ostringstream oss;
-            oss << "{\n"
-                << "\"output\": " << static_cast<int>(output) << "\n";
+            oss << "{\n" ;
 
             content = oss.str();
         }
 
-        void create_json(){
-            ofstream file("proposition.json");
-            if (file.is_open()) {
-                file << content;
-                file.close();
-                //cout << "Archivo generado correctamente." << endl;
-            } else {
-                //cerr << "No se pudo abrir el archivo para escritura." << endl;
-            }
+        void set_output(int output){
+            content +=  "\"output\": " + to_string(output) + "\n";
         }
-
-        void set_sentence(Sentence sentence) {
-            sentences.push_back(sentence);
-        }
-
-        void close_json() {
-            content += ",\n\"sentences\": [\n";
-            for (size_t i = 0; i < sentences.size(); ++i) {
-                content += sentences[i].get_content();
-                if (i + 1 < sentences.size()) content += ",\n";
-            }
-            content += "\n]\n}";
-        }
-
-        string get_content() const { return content; }
+        
     };
 }
+
+/*
+int main() {
+    JsonWritter::TransitionsJson json; // "output": 0
+    // Opción 1: agregar transiciones una por una con set_transition
+    json.set_transition(JsonWritter::Transition(0, "$", 1, 2, "Ingreso de variable"));
+    json.set_transition(JsonWritter::Transition(1, "{", 2, 3, "Abrir llave"));
+    json.set_transition(JsonWritter::Transition(2, "0", 3, 4, "En variable"));
+    json.set_transition(JsonWritter::Transition(3, "x", 3, 3, "En variable"));
+
+    // El error ahora es un arreglo: puedes llamar set_error varias veces,
+    // o usar set_errors con un vector para agregarlos todos de golpe.
+    // Si no lo necesitas, simplemente no llames a ninguno de los dos.
+    json.set_error("Was expected an } in line 46");
+    json.set_error("Unexpected token 'x' in line 52");
+
+    json.close_json();
+    json.create_json("transitions.json");
+
+    cout << json.get_content() << endl;
+
+    return 0;
+}
+*/

@@ -1,19 +1,3 @@
-"""
-==============================================================================
- ascii_table.py
- Panel visual con la tabla del alfabeto latino (A-Z, a-z) y su codigo
- correspondiente en la tabla ASCII, en formato Decimal y Hexadecimal.
-
- Datos de referencia: https://elcodigoascii.com.ar/
-   - Letras mayusculas: ASCII 65 (0x41) a 90 (0x5A)
-   - Letras minusculas: ASCII 97 (0x61) a 122 (0x7A)
-
- Pensado para agregarse como una pestana nueva dentro del QTabWidget del
- panel izquierdo del IDE (el mismo que hoy solo tiene la pestana
- "Registers"). Solo interfaz grafica, sin ninguna logica adicional.
-==============================================================================
-"""
-
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem, QHeaderView,
     QAbstractItemView

@@ -1,28 +1,12 @@
-"""
-==============================================================================
- code_editor.py
- UI de la seccion "editor de codigo" del IDE.
-
- Contiene:
-   - LineNumberArea : gutter que dibuja los numeros de renglon.
-   - CodeEditor      : QPlainTextEdit extendido con numeracion de linea y
-                        resaltado del renglon actual (SOLO interfaz, sin
-                        validacion de sintaxis ni ejecucion).
-   - EditorPanel     : panel completo de la seccion derecha del IDE
-                        (titulo + cabecera con selector de TEMA y nombre de
-                        archivo + pestana "Editor" que contiene un
-                        CodeEditor). Esta es la clase que IDEWindow
-                        instancia para mostrar la seccion de codigo.
-==============================================================================
-"""
-
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QTextEdit,
     QComboBox, QTabWidget, QSizePolicy
 )
-from PyQt6.QtCore import Qt, QRect, QSize, pyqtSignal
+from PyQt6.QtCore import Qt, QRect, QSize, pyqtSignal, QThread
 from PyQt6.QtGui import QColor, QPainter, QTextFormat, QFont, QTextCursor
 
+from Automate.subprocess_automate import write_process
+from UI.process_worker import ProcessWorker
 
 # ==============================================================================
 # SECCION: GUTTER DE NUMEROS DE LINEA (solo numeracion, sin breakpoints ni
@@ -47,11 +31,12 @@ class LineNumberArea(QWidget):
 # de automata: es unicamente la interfaz grafica del editor.
 # ==============================================================================
 class CodeEditor(QPlainTextEdit):
-
+    request_write = pyqtSignal(str)
+    request_stop = pyqtSignal()
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("editorCodigo")
-
         # Colores dinamicos (los actualiza IDEWindow segun el tema activo)
         self.color_normal = QColor("#0c6b1f")
         self.color_linea_actual = QColor("#062b0a")
@@ -70,7 +55,16 @@ class CodeEditor(QPlainTextEdit):
         self.update_line_number_area_width(0)
         self.highlight_current_line()
         
-        self.last_char = ''
+        #Sub Process
+        self.thread = QThread()
+        self.worker = ProcessWorker()
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.start_process)
+        self.request_write.connect(self.worker.write)
+        self.request_stop.connect(self.worker.stop_process)
+
+        self.thread.start()
 
     # --------------------------------------------------------------------
     # Ancho dinamico del gutter (segun cantidad de digitos)
@@ -139,19 +133,19 @@ class CodeEditor(QPlainTextEdit):
         self.setExtraSelections(selecciones)
         
     def keyPressEvent(self, event):
-        self.last_char = event.text()
-        print(f"{self.toPlainText()}")
-        print("=".center(100,'='))
-        command = "+"
-        pos = self.textCursor().position()
-        out = event.text()
-        if event.key() == Qt.Key.Key_Backspace:
-            command = "-"
-            pos -= 1
-        if self.textCursor().position() != len(self.toPlainText()):
-            command = "/"+command
-            out = self.textCursor().block().text() 
-        print(f"Actual: {pos}{command}{out}")
+        char: str = event.text()
+        if char != '':
+            #print("=".center(100,'='))
+            command = "+"
+            pos = self.textCursor().position()
+            if event.key() == Qt.Key.Key_Backspace:
+                command = "-"
+                pos -= 1
+            if self.textCursor().position() != len(self.toPlainText()):
+                command = "/"+command
+                out = self.textCursor().block().text() 
+            #print(f"Actual: {pos}{command}{out}")
+            self.request_write.emit("+hola")
         super().keyPressEvent(event)
         
         """
@@ -160,7 +154,12 @@ class CodeEditor(QPlainTextEdit):
         Comando (borrado-/insertado+)
         Caracter
         """
-        
+    
+    def closeEvent(self, event):
+        self.request_stop.emit()
+        self.thread.quit()
+        self.thread.wait()
+        event.accept()
 
 
 # ==============================================================================
@@ -185,7 +184,6 @@ class EditorPanel(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)

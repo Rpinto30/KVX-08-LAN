@@ -38,8 +38,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor, QPainter, QAction
 
-from code_editor import EditorPanel
-from ascii_table import AsciiTablePanel
+from UI.code_editor import EditorPanel
+from UI.ascii_table import AsciiTablePanel
 
 # ==============================================================================
 # SECCION: UTILIDADES DE ORNAMENTACION (glow neon)
@@ -74,7 +74,6 @@ class ScanlineOverlay(QWidget):
 # SECCION: VENTANA PRINCIPAL DEL IDE
 # ==============================================================================
 class IDEWindow(QMainWindow):
-
     REGISTROS = (
         ["pc"] + [f"r{i}" for i in range(24)] +
         ["et", "bt", "ea", "ba", "sp", "fp", "gp", "ra",
@@ -272,9 +271,7 @@ class IDEWindow(QMainWindow):
         return etiqueta
 
     # --------------------------------------------------------------------
-    # SECCION: Panel derecho -> instancia el EditorPanel (clase de
-    # code_editor.py) que contiene la cabecera con selector de tema y el
-    # editor de codigo.
+    # SECCION: Panel derecho -> code_editor.py
     # --------------------------------------------------------------------
     def _setup_panel_editor(self) -> QWidget:
         self.panel_editor = EditorPanel()
