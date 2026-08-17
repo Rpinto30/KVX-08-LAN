@@ -5,7 +5,6 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QRect, QSize, pyqtSignal, QThread
 from PyQt6.QtGui import QColor, QPainter, QTextFormat, QFont, QTextCursor
 
-from Automate.subprocess_automate import write_process
 from UI.process_worker import ProcessWorker
 
 # ==============================================================================
@@ -134,18 +133,20 @@ class CodeEditor(QPlainTextEdit):
         
     def keyPressEvent(self, event):
         char: str = event.text()
-        if char != '':
+        if char != '' and char.isalpha():
             #print("=".center(100,'='))
             command = "+"
-            pos = self.textCursor().position()
+            #pos = self.textCursor().position()
+            posy = self.textCursor().blockNumber()+1
+            posx = self.textCursor().columnNumber()
+            out = char
             if event.key() == Qt.Key.Key_Backspace:
                 command = "-"
-                pos -= 1
-            if self.textCursor().position() != len(self.toPlainText()):
-                command = "/"+command
-                out = self.textCursor().block().text() 
-            #print(f"Actual: {pos}{command}{out}")
-            self.request_write.emit("+hola")
+                #pos -= 1
+            #if self.textCursor().position() != len(self.toPlainText()):
+            #out = self.textCursor().block().text() 
+            print(f"Actual: [{posy}, {posx}]{command}{out}")
+            self.request_write.emit(f"{posy},{posx}/{command}{out}")
         super().keyPressEvent(event)
         
         """

@@ -38,6 +38,11 @@ class ProcessWorker(QObject):
             self.process.stdin.flush()
         except OSError:
             pass
+        
+        try:
+            print(self.process.stdout.read())
+        except:
+            pass
 
     @pyqtSlot()
     def stop_process(self):
