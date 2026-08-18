@@ -1,12 +1,43 @@
 {
 "output": 0
 ,
+"transitions": [
+{
+"no": 1,
+"char": "HOLAU\n",
+"actual_state": 2,
+"new_state": -1,
+"description": "Col_key: 5"
+},
+{
+"no": 2,
+"char": "MUND\n",
+"actual_state": 3,
+"new_state": 1,
+"description": "Col_key: 5"
+},
+{
+"no": 3,
+"char": "S",
+"actual_state": 4,
+"new_state": 2,
+"description": "Col_key: 0"
+},
+{
+"no": 4,
+"char": "PUTA MADREEEEEEEEEEEEE",
+"actual_state": -1,
+"new_state": 3,
+"description": "Col_key: 27"
+}
+],
 "error": [
-"10+",
-"20+",
-"30+",
-"40+",
-"50+",
-"60+"
+"ID EXISTENTE: 2",
+"Salto ded linea en:4",
+"5",
+"Key: 1; HOLAU\n",
+"Key: 1; HOLAU\nKey: 2; MUND\n",
+"Key: 1; HOLAU\nKey: 2; MUND\nKey: 3; S",
+"Key: 1; HOLAU\nKey: 2; MUND\nKey: 3; SKey: 4; PUTA MADREEEEEEEEEEEEE"
 ]
 }

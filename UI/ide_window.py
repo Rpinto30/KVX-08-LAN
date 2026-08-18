@@ -586,11 +586,3 @@ class IDEWindow(QMainWindow):
     """
 
 
-# ==============================================================================
-# PUNTO DE ENTRADA
-# ==============================================================================
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    ventana = IDEWindow()
-    ventana.show()
-    sys.exit(app.exec())

@@ -23,11 +23,11 @@ namespace JsonWritter {
         }
         return out.str();
     }
-    struct Transition {
+    struct TransitionJsonFragment {
     private:
         string content;
     public:
-        Transition(
+        TransitionJsonFragment(
             int no,
             string char_,
             int actual_state,
@@ -49,10 +49,11 @@ namespace JsonWritter {
         string get_content() const { return content; }
     };
 
-    class TransitionsJson {
+
+class TransitionsJson {
     private:
         string content;
-        vector<Transition> transitions;
+        vector<TransitionJsonFragment> transitions;
         vector<string> errors;
         bool has_error;
         bool has_transitions;
@@ -61,7 +62,7 @@ namespace JsonWritter {
             clear();
         }
 
-        void set_transition(Transition transition) {
+        void set_transition(TransitionJsonFragment transition) {
             has_transitions = true;
             transitions.push_back(transition);
         }
@@ -83,6 +84,14 @@ namespace JsonWritter {
                 ));
             }
         }*/
+
+        void clear_errors(){
+            errors.clear();
+        }
+
+        void clear_transitions(){
+            transitions.clear();
+        }
 
         void set_error(const string& error_) {
             errors.push_back(error_);
@@ -132,6 +141,8 @@ namespace JsonWritter {
             oss << "{\n" ;
 
             content = oss.str();
+            clear_transitions();
+            clear_errors();
         }
 
         void set_output(int output){

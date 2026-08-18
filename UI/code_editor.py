@@ -1,3 +1,4 @@
+import time
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPlainTextEdit, QTextEdit,
     QComboBox, QTabWidget, QSizePolicy
@@ -133,7 +134,7 @@ class CodeEditor(QPlainTextEdit):
         
     def keyPressEvent(self, event):
         char: str = event.text()
-        if char != '' and char.isalpha():
+        if char != '' or char.isalpha():
             #print("=".center(100,'='))
             command = "+"
             #pos = self.textCursor().position()
@@ -146,7 +147,7 @@ class CodeEditor(QPlainTextEdit):
             #if self.textCursor().position() != len(self.toPlainText()):
             #out = self.textCursor().block().text() 
             print(f"Actual: [{posy}, {posx}]{command}{out}")
-            self.request_write.emit(f"{posy},{posx}/{command}{out}")
+            self.request_write.emit(f"{posy}/{posx}{command}{out}")
         super().keyPressEvent(event)
         
         """
@@ -160,6 +161,7 @@ class CodeEditor(QPlainTextEdit):
         self.request_stop.emit()
         self.thread.quit()
         self.thread.wait()
+        time.sleep(2)
         event.accept()
 
 
