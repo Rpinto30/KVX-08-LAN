@@ -38,8 +38,8 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QColor, QPainter, QAction
 
-from UI.code_editor import EditorPanel
-from UI.ascii_table import AsciiTablePanel
+#from UI.code_editor import EditorPanel
+#from UI.ascii_table import AsciiTablePanel
 
 # ==============================================================================
 # SECCION: UTILIDADES DE ORNAMENTACION (glow neon)
