@@ -577,7 +577,7 @@ class IDEWindow(QMainWindow):
             background-color: $fondo; color: $primario; border: none;
             selection-background-color: $primario; selection-color: $fondo; padding: 6px;
         }
-
+#
         QWidget#filaCabeceraEditor { background-color: $fondo_panel; border-bottom: 1px solid $tenue; }
 
         QLabel#labelArchivo { color: $tenue; font-style: italic; padding-left: 12px; }
