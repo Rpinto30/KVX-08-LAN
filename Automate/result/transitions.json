@@ -3,108 +3,23 @@
 ,
 "transitions": [
 {
+"no": 3,
+"char": "aasdasdaaaahola mucho gusto\n",
+"actual_state": 1,
+"new_state": -1,
+"description": "Col_key: 6"
+},
+{
 "no": 1,
-<<<<<<< HEAD
-"char": "#include <iostream>\n",
-"actual_state": 2,
-"new_state": -1,
-"description": "Col_key: 8"
-},
-{
-"no": 2,
-"char": "#include <mathios>\n",
-"actual_state": 3,
-"new_state": 1,
-"description": "Col_key: 8"
-},
-{
-"no": 3,
-"char": "\n",
-=======
-"char": "HOLAU\n",
-"actual_state": 2,
-"new_state": -1,
-"description": "Col_key: 5"
-},
-{
-"no": 2,
-"char": "MUND\n",
-"actual_state": 3,
-"new_state": 1,
-"description": "Col_key: 5"
-},
-{
-"no": 3,
-"char": "S",
->>>>>>> 37ad3f6ea2a099a927b34b33d81c2cc3df7893f4
-"actual_state": 4,
-"new_state": 2,
-"description": "Col_key: 0"
-},
-{
-"no": 4,
-<<<<<<< HEAD
-"char": "using namespace std;\n",
-"actual_state": 5,
-"new_state": 3,
-"description": "Col_key: 19"
-},
-{
-"no": 5,
-"char": "\n",
-"actual_state": 6,
-"new_state": 4,
-"description": "Col_key: 0"
-},
-{
-"no": 6,
-"char": "int main(){\n",
-"actual_state": 7,
-"new_state": 5,
-"description": "Col_key: 11"
-},
-{
-"no": 7,
-"char": "\tcout<<\"Hola mundo\"<<endl;\n",
-"actual_state": 8,
-"new_state": 6,
-"description": "Col_key: 24"
-},
-{
-"no": 8,
-"char": "}",
+"char": "Como estas",
 "actual_state": -1,
-"new_state": 7,
-"description": "Col_key: 0"
+"new_state": 3,
+"description": "Col_key: 10"
 }
 ],
 "error": [
-"ID EXISTENTE: 4",
-"Salto ded linea en:-1",
-"21",
-"Key: 1; #include <iostream>\n",
-"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\n",
-"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \n",
-"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\n",
-"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\nKey: 5; \n",
-"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\nKey: 5; \nKey: 6; int main(){\n",
-"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\nKey: 5; \nKey: 6; int main(){\nKey: 7; \tcout<<\"Hola mundo\"<<endl;\n",
-"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\nKey: 5; \nKey: 6; int main(){\nKey: 7; \tcout<<\"Hola mundo\"<<endl;\nKey: 8; }"
-=======
-"char": "PUTA MADREEEEEEEEEEEEE",
-"actual_state": -1,
-"new_state": 3,
-"description": "Col_key: 27"
-}
-],
-"error": [
-"ID EXISTENTE: 2",
-"Salto ded linea en:4",
-"5",
-"Key: 1; HOLAU\n",
-"Key: 1; HOLAU\nKey: 2; MUND\n",
-"Key: 1; HOLAU\nKey: 2; MUND\nKey: 3; S",
-"Key: 1; HOLAU\nKey: 2; MUND\nKey: 3; SKey: 4; PUTA MADREEEEEEEEEEEEE"
->>>>>>> 37ad3f6ea2a099a927b34b33d81c2cc3df7893f4
+"ID EXISTENTE: 1",
+"Key: 3; aasdasdaaaahola mucho gusto\n",
+"Key: 3; aasdasdaaaahola mucho gusto\nKey: 1; Como estas"
 ]
 }

@@ -2,31 +2,31 @@
     "output": 0,
     "transitions": [
         {
-            "no" : 0,
-            "char" : "$",
-            "actual_state" : 1,
-            "new_state": 2,
+            "no" : 1,
+            "char" : "#",
+            "actual_state" : 0,
+            "new_state": 13,
             "description" : "Ingreso de variable" 
         },
         {
-            "no" : 1,
+            "no" : 2,
             "char" : "{",
-            "actual_state" : 2,
-            "new_state": 3,
+            "actual_state" : 13,
+            "new_state": 14,
             "description" : "Abrir llave" 
         },
         {
-            "no" : 2,
+            "no" : 3,
             "char" : "0",
-            "actual_state" : 3,
-            "new_state": 4,
+            "actual_state" : 14,
+            "new_state": 15,
             "description" : "En variable" 
         },
         {
-            "no" : 3,
+            "no" : 4,
             "char" : "x",
-            "actual_state" : 3,
-            "new_state": 3,
+            "actual_state" : 15,
+            "new_state": 18,
             "description" : "En variable" 
         }
     ],
