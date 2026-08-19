@@ -40,6 +40,7 @@ from PyQt6.QtGui import QColor, QPainter, QAction
 
 from UI.code_editor import EditorPanel
 from UI.ascii_table import AsciiTablePanel
+from UI.automaton_table import AutomatonTablePanel
 
 # ==============================================================================
 # SECCION: UTILIDADES DE ORNAMENTACION (glow neon)
@@ -311,7 +312,15 @@ class IDEWindow(QMainWindow):
         self.consola_mensajes = QPlainTextEdit()
         self.consola_mensajes.setObjectName("consolaMensajes")
         self.consola_mensajes.setReadOnly(True)
-        layout.addWidget(self.consola_mensajes)
+
+        tabs_mensajes = QTabWidget()
+        tabs_mensajes.setObjectName("tabsMensajes")
+        tabs_mensajes.addTab(self.consola_mensajes, "Log")
+
+        self.panel_automata = AutomatonTablePanel()
+        tabs_mensajes.addTab(self.panel_automata, "Autómata")
+
+        layout.addWidget(tabs_mensajes)
 
         return panel
 
@@ -343,6 +352,17 @@ class IDEWindow(QMainWindow):
 
     def limpiar_mensajes(self):
         self.consola_mensajes.clear()
+
+    # --------------------------------------------------------------------
+    # API publica de la tabla de transiciones del automata (tab "Autómata"
+    # junto al log). 'datos_json' puede ser una lista de dicts, un string
+    # JSON o la ruta a un archivo .json (ver AutomatonTablePanel).
+    # --------------------------------------------------------------------
+    def actualizar_tabla_automata(self, datos_json):
+        self.panel_automata.cargar_json(datos_json)
+
+    def agregar_paso_automata(self, paso: dict):
+        self.panel_automata.agregar_paso(paso)
 
     # --------------------------------------------------------------------
     # Archivo: seguimiento de nombre / estado modificado
