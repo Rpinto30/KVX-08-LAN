@@ -4,6 +4,7 @@
 "transitions": [
 {
 "no": 1,
+<<<<<<< HEAD
 "char": "#include <iostream>\n",
 "actual_state": 2,
 "new_state": -1,
@@ -19,12 +20,30 @@
 {
 "no": 3,
 "char": "\n",
+=======
+"char": "HOLAU\n",
+"actual_state": 2,
+"new_state": -1,
+"description": "Col_key: 5"
+},
+{
+"no": 2,
+"char": "MUND\n",
+"actual_state": 3,
+"new_state": 1,
+"description": "Col_key: 5"
+},
+{
+"no": 3,
+"char": "S",
+>>>>>>> 37ad3f6ea2a099a927b34b33d81c2cc3df7893f4
 "actual_state": 4,
 "new_state": 2,
 "description": "Col_key: 0"
 },
 {
 "no": 4,
+<<<<<<< HEAD
 "char": "using namespace std;\n",
 "actual_state": 5,
 "new_state": 3,
@@ -71,5 +90,21 @@
 "Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\nKey: 5; \nKey: 6; int main(){\n",
 "Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\nKey: 5; \nKey: 6; int main(){\nKey: 7; \tcout<<\"Hola mundo\"<<endl;\n",
 "Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\nKey: 5; \nKey: 6; int main(){\nKey: 7; \tcout<<\"Hola mundo\"<<endl;\nKey: 8; }"
+=======
+"char": "PUTA MADREEEEEEEEEEEEE",
+"actual_state": -1,
+"new_state": 3,
+"description": "Col_key: 27"
+}
+],
+"error": [
+"ID EXISTENTE: 2",
+"Salto ded linea en:4",
+"5",
+"Key: 1; HOLAU\n",
+"Key: 1; HOLAU\nKey: 2; MUND\n",
+"Key: 1; HOLAU\nKey: 2; MUND\nKey: 3; S",
+"Key: 1; HOLAU\nKey: 2; MUND\nKey: 3; SKey: 4; PUTA MADREEEEEEEEEEEEE"
+>>>>>>> 37ad3f6ea2a099a927b34b33d81c2cc3df7893f4
 ]
 }
