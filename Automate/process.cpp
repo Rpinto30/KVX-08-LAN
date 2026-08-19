@@ -6,6 +6,7 @@
 #include <string>
 #include <cctype>
 #include <algorithm>
+#include <queue>
 
 #include "utils/dll_lines.h"
 #include "utils/json_writte.h"
@@ -101,7 +102,7 @@ int remove_char_context(string& context, size_t pos){
 /*
 1) Ajustar lineas del IDE a DDL/Hash
 2) Enviar al automata el nuevo caracter ingresado
-3) 
+3) Capturar y enviar a json
 */
 
 int main(){
@@ -109,6 +110,8 @@ int main(){
     string command;
     LineList lines;
     JsonWritter::TransitionsJson json;
+    queue<State> history_states;
+
     while (getline(std::cin, command))
     {
         if (command.empty()) continue;
@@ -119,21 +122,19 @@ int main(){
         if (result.cmd_key == '@') { break; }
         Node* it = lines.get_node(result.line_key);
 
-        //==================INIT SECTION==================
         if (it == nullptr) {
             Line* line = new Line(result);
             it = lines.emplace(result.line_key, line);
-            json.set_error("Nuevo Id: "+to_string(it->id));
-        } else{
-            json.set_error("ID EXISTENTE: "+ to_string(result.line_key));
-        }
+        } 
         
+        //=================UPDATE SECTION=================
         if (result.cmd_key == '+'){
             insert_char_context(it->data->context, result.col_key, command);
             it->data->command.col_key = result.col_key;
-            json.set_error("Salto ded linea en:" +to_string(check_split_lines(it, lines)));
-            json.set_error(to_string(strip_new_context(it->data->context).length()));
-            //check_split_lines(it->data, &lines);
+            /*
+                Aregar al automata:
+                    1) Agregar nuevo caracter ->  * actual state
+            */
         } 
         if (result.cmd_key == '-'){
             if (remove_char_context(it->data->context, result.col_key-1) != 0){
@@ -142,7 +143,26 @@ int main(){
             } else {
                 check_remove_line(it, lines);
             }
+            /*
+                Reubicar estado:
+                    1) In result.line_key (actual)
+                    2) Foreach cadena linea
+                    3) actualizar automata (state) 
+            */
         }  
+        //=================PROCESS SECTION=================
+
+        /*
+        
+        */
+
+
+        /*
+            Capturar estado:
+                1) tomar estado actual de automata
+                2) identificar error
+        */
+
         /*
         lines.for_each_node([&](Node* temp)
         {
@@ -158,13 +178,6 @@ int main(){
             );
             json.set_transition(*transition);
             delete transition;
-        });
-        
-        string er = "";
-        lines.for_each([&](int key, Line* l)
-        {
-            er += "Key: " +to_string(key) + "; " + l->context;
-            json.set_error(er);
         });
         */
         json.set_output(0);

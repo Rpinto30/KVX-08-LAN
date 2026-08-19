@@ -4,40 +4,72 @@
 "transitions": [
 {
 "no": 1,
-"char": "HOLAU\n",
+"char": "#include <iostream>\n",
 "actual_state": 2,
 "new_state": -1,
-"description": "Col_key: 5"
+"description": "Col_key: 8"
 },
 {
 "no": 2,
-"char": "MUND\n",
+"char": "#include <mathios>\n",
 "actual_state": 3,
 "new_state": 1,
-"description": "Col_key: 5"
+"description": "Col_key: 8"
 },
 {
 "no": 3,
-"char": "S",
+"char": "\n",
 "actual_state": 4,
 "new_state": 2,
 "description": "Col_key: 0"
 },
 {
 "no": 4,
-"char": "PUTA MADREEEEEEEEEEEEE",
-"actual_state": -1,
+"char": "using namespace std;\n",
+"actual_state": 5,
 "new_state": 3,
-"description": "Col_key: 27"
+"description": "Col_key: 19"
+},
+{
+"no": 5,
+"char": "\n",
+"actual_state": 6,
+"new_state": 4,
+"description": "Col_key: 0"
+},
+{
+"no": 6,
+"char": "int main(){\n",
+"actual_state": 7,
+"new_state": 5,
+"description": "Col_key: 11"
+},
+{
+"no": 7,
+"char": "\tcout<<\"Hola mundo\"<<endl;\n",
+"actual_state": 8,
+"new_state": 6,
+"description": "Col_key: 24"
+},
+{
+"no": 8,
+"char": "}",
+"actual_state": -1,
+"new_state": 7,
+"description": "Col_key: 0"
 }
 ],
 "error": [
-"ID EXISTENTE: 2",
-"Salto ded linea en:4",
-"5",
-"Key: 1; HOLAU\n",
-"Key: 1; HOLAU\nKey: 2; MUND\n",
-"Key: 1; HOLAU\nKey: 2; MUND\nKey: 3; S",
-"Key: 1; HOLAU\nKey: 2; MUND\nKey: 3; SKey: 4; PUTA MADREEEEEEEEEEEEE"
+"ID EXISTENTE: 4",
+"Salto ded linea en:-1",
+"21",
+"Key: 1; #include <iostream>\n",
+"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\n",
+"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \n",
+"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\n",
+"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\nKey: 5; \n",
+"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\nKey: 5; \nKey: 6; int main(){\n",
+"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\nKey: 5; \nKey: 6; int main(){\nKey: 7; \tcout<<\"Hola mundo\"<<endl;\n",
+"Key: 1; #include <iostream>\nKey: 2; #include <mathios>\nKey: 3; \nKey: 4; using namespace std;\nKey: 5; \nKey: 6; int main(){\nKey: 7; \tcout<<\"Hola mundo\"<<endl;\nKey: 8; }"
 ]
 }
