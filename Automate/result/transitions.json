@@ -1,13 +1,4 @@
 {
 "output": 0
-,
-"transitions": [
-{
-"no": 1,
-"char": "",
-"actual_state": -1,
-"new_state": -1,
-"description": "Col_key: 1"
-}
-]
+
 }

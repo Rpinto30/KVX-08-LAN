@@ -10,7 +10,9 @@
 
 #include "utils/dll_lines.h"
 #include "utils/json_writte.h"
-#include "params.h"
+#include "utils/params.h"
+#include "automate.h"
+
 
 using namespace std;
 using namespace ddl_lines;
@@ -111,14 +113,10 @@ RangeCommand parse_range_command(const string& command){
     size_t slash_pos = command.find('/');
     size_t semi_pos = command.find(';');
     if (slash_pos == string::npos || semi_pos == string::npos) return r;
-    cout<<"Bien"<<endl;
     r.start_index = stoi(command.substr(0, slash_pos));
-    cout<<r.start_index<<endl;
     r.end_index   = stoi(command.substr(slash_pos + 1, semi_pos - (slash_pos + 1)));
-    cout<<r.end_index<<endl;
     r.text  = command.substr(semi_pos + 1); 
     strip_context(r.text);
-    cout<<r.text<<endl;
     return r;
 }
 
@@ -179,9 +177,12 @@ int main(){
     LineList lines;
     JsonWritter::TransitionsJson json;
     queue<State> history_states;
+    afd::Automata automate;
 
     while (getline(std::cin, command))
     {
+        cout<<"===================================================="<<endl;
+        cout<<"Command: "<<command<<endl;
         if (command.empty()) continue;
         //==================INIT SECTION==================
         json.clear();
@@ -198,9 +199,7 @@ int main(){
         // ESPECIAL ACTION
         if (result.cmd_key == '|'){
             RangeCommand range = parse_range_command(command);
-            cout<<"RangeCommand"<<endl;
             int count = range.end_index - range.start_index;
-            cout<<count<<endl;
             Node* cursor; int cursor_col;
             if (locate_global_offset(lines, range.end_index, cursor, cursor_col)){
                 for (int i = 0; i < count && cursor; ++i){
@@ -234,10 +233,6 @@ int main(){
             int cursor_col = result.col_key;
             insert_one_forward(lines, cursor, cursor_col, command[0]);
             it = cursor;
-            /*
-                Aregar al automata:
-                    1) Agregar nuevo caracter ->  * actual state
-            */
         } 
         if (result.cmd_key == '-'){
             Node* cursor = it;
@@ -245,26 +240,10 @@ int main(){
             delete_one_backward(lines, cursor, cursor_col);
             it = cursor;
         }
-            /*
-                Reubicar estado:
-                    1) In result.line_key (actual)
-                    2) Foreach cadena linea
-                    3) actualizar automata (state) 
-            */
-        
+
         //=================PROCESS SECTION=================
-
+        automate.actualizar(command[0], lines.get_line(result.line_key));
         /*
-        
-        */
-
-
-        /*
-            Capturar estado:
-                1) tomar estado actual de automata
-                2) identificar error
-        */
-        
         lines.for_each_node([&](Node* temp)
         {
             int id_next = (temp->next)? temp->next->id : -1;
@@ -279,11 +258,13 @@ int main(){
             );
             json.set_transition(*transition);
             delete transition;
-        });
+        });*/
         
         json.set_output(0);
         json.close_json();
         json.create_json(path+"/Automate/result/transitions.json");
+        //cout<<"---------- LINEAS: "<<endl;
+        //lines.for_each_lines([&](Line* line){});
     }
     return 0;
 }

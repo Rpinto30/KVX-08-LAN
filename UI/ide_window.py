@@ -168,7 +168,7 @@ class IDEWindow(QMainWindow):
         self._timer_analisis = QTimer(self)
         self._timer_analisis.setSingleShot(True)
         self._timer_analisis.setInterval(250)
-        self._timer_analisis.timeout.connect(self._ejecutar_analisis_automata)
+        #self._timer_analisis.timeout.connect(self._ejecutar_analisis_automata)
 
         if hasattr(self, "panel_automata"):
             self.panel_automata.analisis_completado.connect(self._on_analisis_automata_completado)
@@ -184,7 +184,12 @@ class IDEWindow(QMainWindow):
         self.thread.started.connect(self.worker.start_process)
         self.worker.on_draw.connect(self.request_on_draw)
         #self.request_gen_all_diagrams.connect(self.worker.generate)
-        self.request_stop.connect(self.worker.stop_process)
+        def stop_ui():
+            self.setCursor(Qt.CursorShape.WaitCursor)
+            self.label_online.setText("● Terminando procesos y saliendo...")
+            self.worker.stop_process()
+        
+        self.request_stop.connect(stop_ui)
         
         def message_log_drawer(mensaje: str):
             self._console_log(mensaje)
@@ -398,12 +403,8 @@ class IDEWindow(QMainWindow):
         self.consola_mensajes.setObjectName("consolaMensajes")
         self.consola_mensajes.setReadOnly(True)
 
-        tabs_mensajes = QTabWidget()
-        tabs_mensajes.setObjectName("tabsMensajes")
-        tabs_mensajes.addTab(self.consola_mensajes, "Log")
-
-        layout.addWidget(tabs_mensajes)
-        #layout.addWidget(self.consola_mensajes)
+        #layout.addWidget(tabs_mensajes)
+        layout.addWidget(self.consola_mensajes)
 
         return panel_consola
 
@@ -440,7 +441,6 @@ class IDEWindow(QMainWindow):
         #self.label_imagen.setSizePolicy(
         #    QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         def load_diagra(i):
-            print(i)
             img = {
                 1:"./Automate/result/diagramas/assing_variables.png",
                 2:"./Automate/result/diagramas/comments.png",
@@ -508,6 +508,8 @@ class IDEWindow(QMainWindow):
 
         return barra
 
+    #MOMENTANEO EL COUT
+    
     def limpiar_mensajes(self):
         self.consola_mensajes.clear()
 
@@ -520,6 +522,7 @@ class IDEWindow(QMainWindow):
     def agregar_paso_automata(self, paso: dict):
         self.panel_automata.agregar_paso(paso)
 
+    #JORGE
     def _ejecutar_analisis_automata(self):
         texto = self.editor.toPlainText()
         if texto.strip():
@@ -641,7 +644,7 @@ class IDEWindow(QMainWindow):
             QTimer.singleShot(180 * indice, lambda texto=linea: self._console_log(texto))
 
     def _console_log(self, message):
-        QTimer.singleShot(180, lambda : self._console_log(message))
+        QTimer.singleShot(180, lambda: self.consola_mensajes.appendPlainText(message))
         
 
     def _aplicar_glows_tema(self, paleta: dict):
@@ -693,7 +696,7 @@ class IDEWindow(QMainWindow):
         self.request_stop.emit()
         self.thread.quit()
         self.thread.wait()
-        event.accept()
+        QTimer.singleShot(50, event.accept)
         
 
     # --------------------------------------------------------------------

@@ -5,31 +5,13 @@
 #include <functional>
 #include <string>
 
+#include "params.h"
+
+
 using namespace std;
 
 namespace ddl_lines{
     
-    
-typedef struct ParsedCommand {
-    int line_key = 0;
-    int col_key = 0;
-    char cmd_key = '\n';
-} ParsedCommand;
-
-typedef struct Line{
-    string context; 
-    ParsedCommand command;
-
-    public:
-    Line(ParsedCommand command): command(command), context("") {}
-
-    void set_context(string context){
-        this->context = context;
-    }
-    ~Line() = default;
-
-} Line;
-
 
 struct Node {
     int id;
@@ -92,7 +74,7 @@ public:
         return node;
     }
 
-    Line* get(int key) {
+    Line* get_line(int key) {
         auto it = index.find(key);
         return it != index.end() ? it->second->data : nullptr;
     }
@@ -135,10 +117,10 @@ public:
         delete node;
     }
 
-    void for_each(const std::function<void(int id, Line*)>& fn) const {
+    void for_each_lines(const std::function<void(Line*)>& fn) const {
         Node* cur = head;
         while (cur) {
-            fn(cur->id, cur->data);
+            fn(cur->data);
             cur = cur->next;
         }
     }

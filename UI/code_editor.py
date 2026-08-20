@@ -24,7 +24,6 @@ class LineNumberArea(QWidget):
 class CodeEditor(QPlainTextEdit):
     request_write = pyqtSignal(str)
     request_stop = pyqtSignal()
-    reques_cout = pyqtSignal()
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -55,7 +54,6 @@ class CodeEditor(QPlainTextEdit):
         self.thread.started.connect(self.worker.start_process)
         self.request_write.connect(self.worker.write)
         self.request_stop.connect(self.worker.stop_process)
-        self.reques_cout.connect(self.worker.cout)
 
         self.thread.start()
 
@@ -161,7 +159,7 @@ class CodeEditor(QPlainTextEdit):
         
         ctrl = event.modifiers() & Qt.KeyboardModifier.ControlModifier
         shift = event.modifiers() & Qt.KeyboardModifier.ShiftModifier
-        
+
         if (self.textCursor().hasSelection()):
             tecla = event.key()
             texto_tecla = event.text()
@@ -170,15 +168,15 @@ class CodeEditor(QPlainTextEdit):
             es_reemplazo = bool(texto_tecla and texto_tecla.isprintable())
 
             if es_borrado:
-                texto_eliminado = self.textCursor().selectedText()
+                texto_eliminado = self.textCursor().selectedText().replace("\x7f", "").replace("\t", "")
                 self.request_write.emit(f"{posy}/{posx}|{self.textCursor().selectionStart()}/{self.textCursor().selectionEnd()};{texto_eliminado}")
                 print(f"{posy}/{posx}|{self.textCursor().selectionStart()}/{self.textCursor().selectionEnd()};{texto_eliminado}")
             elif es_reemplazo:
-                texto_eliminado = self.textCursor().selectedText()
+                texto_eliminado = self.textCursor().selectedText().replace("\x7f", "").replace("\t", "")
                 self.request_write.emit(f"{posy}/{posx}~{self.textCursor().selectionStart()}/{self.textCursor().selectionEnd()};{texto_eliminado}")
                 print(f"{posy}/{posx}~{self.textCursor().selectionStart()}/{self.textCursor().selectionEnd()};{texto_eliminado}")
         else:
-            char: str = event.text().replace("\x7f", "").replace('\t', '')
+            char: str = event.text().replace("\x7f", "").replace("\t", "")
 
             if char and (char.isascii() or char != ''):
                 if ctrl:
@@ -193,7 +191,7 @@ class CodeEditor(QPlainTextEdit):
                 out = char
                 if (event.key() == Qt.Key.Key_Backspace):
                     command = "-"
-                print(f"{posy}/{posx}{command}{out}")
+                #print(f"{posy}/{posx}{command}{out}")
                 self.request_write.emit(f"{posy}/{posx}{command}{out}")
             
             

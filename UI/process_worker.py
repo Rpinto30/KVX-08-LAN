@@ -1,11 +1,12 @@
 from PyQt6.QtCore import QObject, QThread, pyqtSignal, pyqtSlot
 import subprocess
 import os
-
+import threading
 
 class ProcessWorker(QObject):
     started = pyqtSignal()
     finished = pyqtSignal()
+    cout = pyqtSignal(str, str)
 
     def __init__(self, exe_path: str = './Automate/output.exe'):
         super().__init__()
@@ -17,8 +18,8 @@ class ProcessWorker(QObject):
         self.process = subprocess.Popen(
             [self.exe_path],
             stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True,
             encoding='utf-8',
             errors='replace',
@@ -26,6 +27,23 @@ class ProcessWorker(QObject):
             cwd=os.getcwd()
         )
         self.started.emit()
+        
+        threading.Thread(target=self._read_stdout, daemon=True).start()
+        threading.Thread(target=self._read_stderr, daemon=True).start()
+
+    def _read_stdout(self):
+        for line in iter(self.process.stdout.readline, ''):
+            if line:
+                if line.strip() != "":
+                    print(f"COUT<< {line.strip()}")
+        self.process.stdout.close()
+
+    def _read_stderr(self):
+        for line in iter(self.process.stderr.readline, ''):
+            if line:
+                if line.strip() != "":
+                    print(f"CERR<< {line.strip()}")
+        self.process.stderr.close()
 
     @pyqtSlot(str)
     def write(self, command: str):
@@ -37,23 +55,6 @@ class ProcessWorker(QObject):
             self.process.stdin.write(command)
             self.process.stdin.flush()
         except OSError:
-            pass
-        
-        try:
-            print(self.process.stdout.read())
-        except:
-            pass
-    
-    @pyqtSlot()
-    def cout(self):
-        try:
-            print("COUT<< ",self.process.stdout.read())
-        except:
-            pass
-        
-        try:
-            print("CERR<< ",self.process.stderr.read())
-        except:
             pass
         
 
@@ -84,9 +85,7 @@ class ProcessDrawer(QObject):
         self.started.emit()
         
         try:
-            
-            for mensaje in gen_all(self.RUTA_JSON, self.CARPETA_DIAGRAMAS):
-                print(mensaje)          
+            for mensaje in gen_all(self.RUTA_JSON, self.CARPETA_DIAGRAMAS):      
                 self.on_draw.emit(mensaje)
         finally:
             self.stop_process()

@@ -287,10 +287,6 @@ class AutomatonTablePanel(QWidget):
     # API publica: analiza un texto directamente con el autómata
     # --------------------------------------------------------------------
     def analizar_cadena(self, texto: str, en_tiempo_real: bool = True, interval_ms: int = 60):
-        """
-        Ejecuta el autómata sobre el texto dado, actualiza la tabla
-        (en tiempo real o de golpe) y emite las señales de sintaxis no válida.
-        """
         pasos, errores = self.evaluador.analizar_cadena(texto)
         self.errores_sintaxis = errores
 
@@ -302,9 +298,6 @@ class AutomatonTablePanel(QWidget):
         has_err = len(errores) > 0
         self.analisis_completado.emit(has_err, errores)
 
-    # --------------------------------------------------------------------
-    # API publica: carga la tabla a partir de JSON (lista, string o ruta)
-    # --------------------------------------------------------------------
     def cargar_json(self, datos):
         self.limpiar()
         filas = self._normalizar_datos(datos)
@@ -328,7 +321,6 @@ class AutomatonTablePanel(QWidget):
         self.agregar_paso(paso)
 
     def _normalizar_datos(self, datos) -> list[dict]:
-        """Normaliza dicts, listas, json strings, paths o C++ output json."""
         if isinstance(datos, (str, Path)):
             texto = str(datos)
             ruta = Path(texto)
@@ -347,7 +339,6 @@ class AutomatonTablePanel(QWidget):
                 self.errores_sintaxis = errs
                 return pasos
 
-        # Formato objeto JSON de C++ {"output": 0, "transitions": [...], "error": ...}
         if isinstance(datos, dict):
             transiciones_raw = datos.get("transitions", [])
             filas = []
@@ -376,7 +367,7 @@ class AutomatonTablePanel(QWidget):
                 filas.append({
                     "paso": len(filas),
                     "estado_actual": "q_err",
-                    "lee": "❌",
+                    "lee": "-",
                     "transicion": "ERROR",
                     "nuevo_estado": "ERR",
                     "explicacion": f"Sintaxis no válida: {msg}",

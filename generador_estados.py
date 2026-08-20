@@ -55,7 +55,6 @@ def gen_all(ruta_json, carpeta_base_dot):
         ruta_png_out = os.path.join(CARPETA_SALIDA, f"{nombre_base_out}.png")
         try:
             subprocess.run(["dot", "-Tpng", ruta_dot_salida, "-o", ruta_png_out], check=True)
-            print(f"")
             yield f"> Grafico {nombre_base_out}.png ha sido generado!"
             #os.remove(ruta_dot_salida)
         except subprocess.CalledProcessError as e:
