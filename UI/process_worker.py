@@ -103,3 +103,5 @@ class ProcessDrawer(QObject):
     def stop_process(self):
         self.creating_image = False
         self.finished.emit()
+        
+

@@ -21,14 +21,6 @@ class LineNumberArea(QWidget):
         self.code_editor.line_number_area_paint_event(evento)
 
 
-<<<<<<< HEAD
-=======
-# ==============================================================================
-# SECCION: EDITOR DE CODIGO
-# QPlainTextEdit extendido con gutter numerado y resaltado del renglon
-# actual. Incluye resaltado visual en rojo de errores marcados por el autómata.
-# ==============================================================================
->>>>>>> origin/tabla_automata
 class CodeEditor(QPlainTextEdit):
     request_write = pyqtSignal(str)
     request_stop = pyqtSignal()
@@ -92,12 +84,6 @@ class CodeEditor(QPlainTextEdit):
             QRect(cr.left(), cr.top(), self.line_number_area_width(), cr.height())
         )
 
-<<<<<<< HEAD
-=======
-    # --------------------------------------------------------------------
-    # Dibuja números de renglon e indicador de error ❌ para sintaxis no válida.
-    # --------------------------------------------------------------------
->>>>>>> origin/tabla_automata
     def line_number_area_paint_event(self, evento):
         painter = QPainter(self.line_number_area)
         painter.fillRect(evento.rect(), QColor("#000000"))
@@ -125,12 +111,6 @@ class CodeEditor(QPlainTextEdit):
             top += alto
             numero_bloque += 1
 
-<<<<<<< HEAD
-=======
-    # --------------------------------------------------------------------
-    # Resalta el renglon actual y las líneas con error de sintaxis en rojo.
-    # --------------------------------------------------------------------
->>>>>>> origin/tabla_automata
     def highlight_current_line(self):
         selecciones = []
         if not self.isReadOnly():

@@ -42,12 +42,9 @@ from PyQt6.QtGui import QColor, QPainter, QAction, QPixmap
 
 from UI.code_editor import EditorPanel
 from UI.ascii_table import AsciiTablePanel
-<<<<<<< HEAD
+from UI.automaton_table import AutomatonTablePanel
 from UI.process_worker import ProcessDrawer
 
-=======
-from UI.automaton_table import AutomatonTablePanel
->>>>>>> origin/tabla_automata
 
 # ==============================================================================
 # SECCION: UTILIDADES DE ORNAMENTACION (glow neon)
@@ -297,6 +294,9 @@ class IDEWindow(QMainWindow):
         tabs = QTabWidget()
         tabs.setObjectName("tabsIzquierda")
         tabs.addTab(AsciiTablePanel(), "ASCII")
+        self.panel_automata = AutomatonTablePanel()
+        tabs.addTab(self.panel_automata, "Autómata")
+        
         #tabs.addTab(self._setup_tabla_registros(), "Registers")
         
         layout.addWidget(tabs)
@@ -402,10 +402,8 @@ class IDEWindow(QMainWindow):
         tabs_mensajes.setObjectName("tabsMensajes")
         tabs_mensajes.addTab(self.consola_mensajes, "Log")
 
-        self.panel_automata = AutomatonTablePanel()
-        tabs_mensajes.addTab(self.panel_automata, "Autómata")
-
         layout.addWidget(tabs_mensajes)
+        #layout.addWidget(self.consola_mensajes)
 
         return panel_consola
 
@@ -510,19 +508,10 @@ class IDEWindow(QMainWindow):
 
         return barra
 
-    # --------------------------------------------------------------------
-    # API publica de la consola de mensajes
-    # --------------------------------------------------------------------
-    def agregar_mensaje(self, texto: str):
-        self.consola_mensajes.appendPlainText(texto)
-
     def limpiar_mensajes(self):
         self.consola_mensajes.clear()
 
     # --------------------------------------------------------------------
-    # API publica de la tabla de transiciones del automata (tab "Autómata"
-    # junto al log). 'datos_json' puede ser una lista de dicts, un string
-    # JSON o la ruta a un archivo .json (ver AutomatonTablePanel).
     def actualizar_tabla_automata(self, datos_json):
         self.panel_automata.cargar_json(datos_json)
         if self.panel_automata.tiene_errores():
@@ -543,7 +532,7 @@ class IDEWindow(QMainWindow):
         self.editor.establecer_errores(errores)
         if tiene_errores:
             primero = errores[0]
-            self.agregar_mensaje(
+            self._console_log(
                 f"> [Autómata] Sintaxis no válida en línea {primero.get('linea')}: {primero.get('mensaje')}"
             )
 
@@ -569,7 +558,7 @@ class IDEWindow(QMainWindow):
         self.ruta_archivo_actual = None
         self._modificado = False
         self._refrescar_label_archivo()
-        self.agregar_mensaje("> Nuevo archivo creado.")
+        self._console_log("> Nuevo archivo creado.")
 
     def _on_abrir_archivo(self):
         ruta, _ = QFileDialog.getOpenFileName(
@@ -581,13 +570,13 @@ class IDEWindow(QMainWindow):
             with open(ruta, "r", encoding="utf-8") as archivo:
                 contenido = archivo.read()
         except OSError as error:
-            self.agregar_mensaje(f"> Error al abrir archivo: {error}")
+            self._console_log(f"> Error al abrir archivo: {error}")
             return
         self.editor.setPlainText(contenido)
         self.ruta_archivo_actual = ruta
         self._modificado = False
         self._refrescar_label_archivo()
-        self.agregar_mensaje(f"> Archivo cargado: {ruta}")
+        self._console_log(f"> Archivo cargado: {ruta}")
 
     def _on_guardar_archivo(self):
         if not self.ruta_archivo_actual:
@@ -609,11 +598,11 @@ class IDEWindow(QMainWindow):
             with open(ruta, "w", encoding="utf-8") as archivo:
                 archivo.write(self.editor.toPlainText())
         except OSError as error:
-            self.agregar_mensaje(f"> Error al guardar: {error}")
+            self._console_log(f"> Error al guardar: {error}")
             return
         self._modificado = False
         self._refrescar_label_archivo()
-        self.agregar_mensaje(f"> Archivo guardado: {ruta}")
+        self._console_log(f"> Archivo guardado: {ruta}")
 
     def _on_ayuda_documentacion(self):
         QMessageBox.information(
@@ -649,10 +638,10 @@ class IDEWindow(QMainWindow):
 
     def _reproducir_secuencia_arranque(self):
         for indice, linea in enumerate(self.SECUENCIA_ARRANQUE):
-            QTimer.singleShot(180 * indice, lambda texto=linea: self.agregar_mensaje(texto))
+            QTimer.singleShot(180 * indice, lambda texto=linea: self._console_log(texto))
 
     def _console_log(self, message):
-        QTimer.singleShot(180, lambda : self.agregar_mensaje(message))
+        QTimer.singleShot(180, lambda : self._console_log(message))
         
 
     def _aplicar_glows_tema(self, paleta: dict):
@@ -666,7 +655,7 @@ class IDEWindow(QMainWindow):
     # --------------------------------------------------------------------
     def _on_cambiar_tema(self, clave: str):
         self._aplicar_tema(clave)
-        self.agregar_mensaje(f"> Tema visual cambiado a '{clave.upper()}'.")
+        self._console_log(f"> Tema visual cambiado a '{clave.upper()}'.")
 
     # --------------------------------------------------------------------
     # Aplica un tema completo: hoja de estilos + colores dinamicos del
@@ -773,7 +762,7 @@ class IDEWindow(QMainWindow):
             background-color: $fondo; color: $primario; border: none;
             selection-background-color: $primario; selection-color: $fondo; padding: 6px;
         }
-#
+
         QWidget#filaCabeceraEditor { background-color: $fondo_panel; border-bottom: 1px solid $tenue; }
 
         QLabel#labelArchivo { color: $tenue; font-style: italic; padding-left: 12px; }
@@ -841,14 +830,3 @@ class IDEWindow(QMainWindow):
     """
 
 
-<<<<<<< HEAD
-=======
-# ==============================================================================
-# PUNTO DE ENTRADA
-# ==============================================================================
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    ventana = IDEWindow()
-    ventana.show()
-    sys.exit(app.exec())
->>>>>>> origin/tabla_automata
