@@ -4,7 +4,7 @@ from PyQt6.QtWidgets import (
     QComboBox, QTabWidget, QSizePolicy
 )
 from PyQt6.QtCore import Qt, QRect, QSize, pyqtSignal, QThread
-from PyQt6.QtGui import QColor, QPainter, QTextFormat, QFont, QTextCursor
+from PyQt6.QtGui import QColor, QPainter, QTextFormat, QFont, QTextCursor, QTextCharFormat
 
 from UI.process_worker import ProcessWorker
 
@@ -21,6 +21,14 @@ class LineNumberArea(QWidget):
         self.code_editor.line_number_area_paint_event(evento)
 
 
+<<<<<<< HEAD
+=======
+# ==============================================================================
+# SECCION: EDITOR DE CODIGO
+# QPlainTextEdit extendido con gutter numerado y resaltado del renglon
+# actual. Incluye resaltado visual en rojo de errores marcados por el autómata.
+# ==============================================================================
+>>>>>>> origin/tabla_automata
 class CodeEditor(QPlainTextEdit):
     request_write = pyqtSignal(str)
     request_stop = pyqtSignal()
@@ -33,6 +41,7 @@ class CodeEditor(QPlainTextEdit):
         self.color_linea_actual = QColor("#062b0a")
 
         self.line_number_area = LineNumberArea(self)
+        self.errores_sintaxis: dict[int, str] = {}
 
         fuente = QFont("Consolas", 11)
         fuente.setStyleHint(QFont.StyleHint.Monospace)
@@ -60,7 +69,7 @@ class CodeEditor(QPlainTextEdit):
 
     def line_number_area_width(self) -> int:
         digitos = len(str(max(1, self.blockCount())))
-        espacio = 20 + self.fontMetrics().horizontalAdvance("9") * digitos
+        espacio = 28 + self.fontMetrics().horizontalAdvance("9") * digitos
         return espacio
 
     def update_line_number_area_width(self, _bloques_nuevos):
@@ -83,6 +92,12 @@ class CodeEditor(QPlainTextEdit):
             QRect(cr.left(), cr.top(), self.line_number_area_width(), cr.height())
         )
 
+<<<<<<< HEAD
+=======
+    # --------------------------------------------------------------------
+    # Dibuja números de renglon e indicador de error ❌ para sintaxis no válida.
+    # --------------------------------------------------------------------
+>>>>>>> origin/tabla_automata
     def line_number_area_paint_event(self, evento):
         painter = QPainter(self.line_number_area)
         painter.fillRect(evento.rect(), QColor("#000000"))
@@ -95,15 +110,27 @@ class CodeEditor(QPlainTextEdit):
         while bloque.isValid() and top <= evento.rect().bottom():
             if bloque.isVisible() and top >= evento.rect().top():
                 numero_linea = numero_bloque + 1
-                painter.setPen(self.color_normal)
+                if numero_linea in self.errores_sintaxis:
+                    painter.setPen(QColor("#ff3333"))
+                    texto_gutter = f"❌ {numero_linea}"
+                else:
+                    painter.setPen(self.color_normal)
+                    texto_gutter = str(numero_linea)
+
                 painter.drawText(
                     0, top, self.line_number_area.width() - 6, alto,
-                    Qt.AlignmentFlag.AlignRight, str(numero_linea)
+                    Qt.AlignmentFlag.AlignRight, texto_gutter
                 )
             bloque = bloque.next()
             top += alto
             numero_bloque += 1
 
+<<<<<<< HEAD
+=======
+    # --------------------------------------------------------------------
+    # Resalta el renglon actual y las líneas con error de sintaxis en rojo.
+    # --------------------------------------------------------------------
+>>>>>>> origin/tabla_automata
     def highlight_current_line(self):
         selecciones = []
         if not self.isReadOnly():
@@ -113,7 +140,40 @@ class CodeEditor(QPlainTextEdit):
             seleccion.cursor = self.textCursor()
             seleccion.cursor.clearSelection()
             selecciones.append(seleccion)
+
+        # Resaltado en rojo para sintaxis no válida marcada por el autómata
+        for num_linea, mensaje in self.errores_sintaxis.items():
+            bloque = self.document().findBlockByNumber(num_linea - 1)
+            if bloque.isValid():
+                cursor = QTextCursor(bloque)
+                sel_err = QTextEdit.ExtraSelection()
+                fmt = sel_err.format
+                fmt.setBackground(QColor("#4a1414"))  # Fondo rojo oscuro de error
+                fmt.setForeground(QColor("#ff9999"))
+                fmt.setUnderlineColor(QColor("#ff3333"))
+                fmt.setUnderlineStyle(QTextCharFormat.UnderlineStyle.WaveUnderline)
+                fmt.setProperty(QTextFormat.Property.FullWidthSelection, True)
+                fmt.setToolTip(f"Sintaxis no válida (Autómata): {mensaje}")
+                sel_err.cursor = cursor
+                sel_err.cursor.clearSelection()
+                selecciones.append(sel_err)
+
         self.setExtraSelections(selecciones)
+
+    def establecer_errores(self, errores: list[dict]):
+        """Actualiza la lista de errores del autómata y resalta en el editor."""
+        self.errores_sintaxis.clear()
+        for err in errores:
+            linea = err.get("linea", 1)
+            msg = err.get("mensaje", "Sintaxis no válida")
+            self.errores_sintaxis[linea] = msg
+        self.highlight_current_line()
+        self.line_number_area.update()
+
+    def limpiar_errores(self):
+        self.errores_sintaxis.clear()
+        self.highlight_current_line()
+        self.line_number_area.update()
         
     def keyPressEvent(self, event):
         posy = self.textCursor().blockNumber()+1
@@ -225,7 +285,7 @@ class EditorPanel(QWidget):
         tabs_editor.setTabPosition(QTabWidget.TabPosition.South)
 
         self.editor = CodeEditor()
-        #self.editor.textChanged.connect(self.contenido_modificado.emit)
+        self.editor.textChanged.connect(self.contenido_modificado.emit)
 
         tabs_editor.addTab(self.editor, "Editor (Ctrl+E)")
 
