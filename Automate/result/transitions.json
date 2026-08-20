@@ -3,23 +3,11 @@
 ,
 "transitions": [
 {
-"no": 3,
-"char": "aasdasdaaaahola mucho gusto\n",
-"actual_state": 1,
-"new_state": -1,
-"description": "Col_key: 6"
-},
-{
 "no": 1,
-"char": "Como estas",
+"char": "",
 "actual_state": -1,
-"new_state": 3,
-"description": "Col_key: 10"
+"new_state": -1,
+"description": "Col_key: 1"
 }
-],
-"error": [
-"ID EXISTENTE: 1",
-"Key: 3; aasdasdaaaahola mucho gusto\n",
-"Key: 3; aasdasdaaaahola mucho gusto\nKey: 1; Como estas"
 ]
 }

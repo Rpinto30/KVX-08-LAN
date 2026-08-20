@@ -62,6 +62,10 @@ public:
         }
     }
 
+    Node* get_head() const {
+        return head;
+    }
+
     int push_back(Line* data) {
         Node* node = new Node(next_id, data);
         if (!tail) {

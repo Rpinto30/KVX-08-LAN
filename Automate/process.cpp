@@ -57,6 +57,12 @@ ParsedCommand clear_command(string& command) {
     return result;
 }
 
+struct RangeCommand {
+    int start_index = 0;
+    int end_index = 0;
+    string text = "";
+};
+
 //problema: unir lineas que se borran
 void check_remove_line(ddl_lines::Node* current, ddl_lines::LineList& lines){
     if (current->data->context.empty() || current->data->context == "\n"){
@@ -83,6 +89,7 @@ int check_split_lines(ddl_lines::Node* current, ddl_lines::LineList& lines){
     return split_pos;
 }
 
+
 void insert_char_context(string& context, size_t pos, const string& new_char)
 {
     if (pos > context.length()) {
@@ -97,6 +104,67 @@ int remove_char_context(string& context, size_t pos){
         return 0;
     } 
     return -1;
+}
+
+RangeCommand parse_range_command(const string& command){
+    RangeCommand r;
+    size_t slash_pos = command.find('/');
+    size_t semi_pos = command.find(';');
+    if (slash_pos == string::npos || semi_pos == string::npos) return r;
+    cout<<"Bien"<<endl;
+    r.start_index = stoi(command.substr(0, slash_pos));
+    cout<<r.start_index<<endl;
+    r.end_index   = stoi(command.substr(slash_pos + 1, semi_pos - (slash_pos + 1)));
+    cout<<r.end_index<<endl;
+    r.text  = command.substr(semi_pos + 1); 
+    strip_context(r.text);
+    cout<<r.text<<endl;
+    return r;
+}
+
+/*==========================ESPECIAL ACTIONS==========================*/
+bool locate_global_offset(LineList& lines, int target_offset, Node*& out_node, int& out_col){
+    int accumulated = 0;
+    Node* node = lines.get_head();
+    while (node){
+        int len = (int)node->data->context.length();
+        if (target_offset <= accumulated + len){
+            out_node = node;
+            out_col = target_offset - accumulated;
+            return true;
+        }
+        accumulated += len;
+        node = node->next;
+    }
+    return false;
+}
+
+void delete_one_backward(LineList& lines, Node*& node, int& col){
+    if (col > 0){
+        remove_char_context(node->data->context, col - 1);
+        col--;
+    } else {
+        int boundary = 0;
+        if (node->prev) {
+            boundary = (int)node->prev->data->context.length();
+            if (boundary > 0 && node->prev->data->context.back() == '\n') boundary--;
+        }
+        Node* merged = lines.merge_with_prev(node);
+        node = merged;
+        col = merged ? boundary : 0;
+    }
+}
+
+void insert_one_forward(LineList& lines, Node*& node, int& col, char c){
+    insert_char_context(node->data->context, col, string(1, c));
+    node->data->command.col_key = col;
+    col++;
+
+    int split_pos = check_split_lines(node, lines);
+    if (split_pos != -1){
+        node = node->next; // el resto se movió a la línea siguiente
+        col = 0;
+    }
 }
 
 /*
@@ -127,29 +195,63 @@ int main(){
             it = lines.emplace(result.line_key, line);
         } 
         
+        // ESPECIAL ACTION
+        if (result.cmd_key == '|'){
+            RangeCommand range = parse_range_command(command);
+            cout<<"RangeCommand"<<endl;
+            int count = range.end_index - range.start_index;
+            cout<<count<<endl;
+            Node* cursor; int cursor_col;
+            if (locate_global_offset(lines, range.end_index, cursor, cursor_col)){
+                for (int i = 0; i < count && cursor; ++i){
+                    delete_one_backward(lines, cursor, cursor_col);
+                }
+                it = cursor;
+            }
+        }
+
+        /*
+        if (result.cmd_key == '~'){
+            RangeCommand range = parse_range_command(command);
+            int count = range.end_index - range.start_index;
+
+            Node* cursor; int cursor_col;
+            if (locate_global_offset(lines, range.end_index, cursor, cursor_col)){
+                for (int i = 0; i < count && cursor; ++i){
+                    delete_one_backward(lines, cursor, cursor_col);
+                }
+                for (char c : range.text){
+                    insert_one_forward(lines, cursor, cursor_col, c);
+                }
+                it = cursor;
+            }
+        }*/
+
+
         //=================UPDATE SECTION=================
         if (result.cmd_key == '+'){
-            insert_char_context(it->data->context, result.col_key, command);
-            it->data->command.col_key = result.col_key;
+            Node* cursor = it;
+            int cursor_col = result.col_key;
+            insert_one_forward(lines, cursor, cursor_col, command[0]);
+            it = cursor;
             /*
                 Aregar al automata:
                     1) Agregar nuevo caracter ->  * actual state
             */
         } 
         if (result.cmd_key == '-'){
-            if (remove_char_context(it->data->context, result.col_key-1) != 0){
-                Node* merged = lines.merge_with_prev(it);
-                if (merged) it = merged;
-            } else {
-                check_remove_line(it, lines);
-            }
+            Node* cursor = it;
+            int cursor_col = result.col_key;
+            delete_one_backward(lines, cursor, cursor_col);
+            it = cursor;
+        }
             /*
                 Reubicar estado:
                     1) In result.line_key (actual)
                     2) Foreach cadena linea
                     3) actualizar automata (state) 
             */
-        }  
+        
         //=================PROCESS SECTION=================
 
         /*
@@ -162,8 +264,7 @@ int main(){
                 1) tomar estado actual de automata
                 2) identificar error
         */
-
-        /*
+        
         lines.for_each_node([&](Node* temp)
         {
             int id_next = (temp->next)? temp->next->id : -1;
@@ -179,7 +280,7 @@ int main(){
             json.set_transition(*transition);
             delete transition;
         });
-        */
+        
         json.set_output(0);
         json.close_json();
         json.create_json(path+"/Automate/result/transitions.json");

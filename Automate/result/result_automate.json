@@ -5,28 +5,28 @@
             "no" : 1,
             "char" : "#",
             "actual_state" : 0,
-            "new_state": 13,
+            "new_state": 1,
             "description" : "Ingreso de variable" 
         },
         {
             "no" : 2,
             "char" : "{",
-            "actual_state" : 13,
-            "new_state": 14,
+            "actual_state" : 1,
+            "new_state": 2,
             "description" : "Abrir llave" 
         },
         {
             "no" : 3,
             "char" : "0",
-            "actual_state" : 14,
-            "new_state": 15,
+            "actual_state" : 2,
+            "new_state": 3,
             "description" : "En variable" 
         },
         {
             "no" : 4,
             "char" : "x",
-            "actual_state" : 15,
-            "new_state": 18,
+            "actual_state" : 3,
+            "new_state": 4,
             "description" : "En variable" 
         }
     ],

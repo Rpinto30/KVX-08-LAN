@@ -27,19 +27,23 @@
 
 import os
 import sys
+import time
 from string import Template
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QLabel, QFrame, QPushButton, QTabWidget, QTableWidget, QTableWidgetItem,
-    QHeaderView, QSplitter, QMenu, QAbstractItemView,
+    QHeaderView, QSplitter, QMenu, QAbstractItemView, QSizePolicy,
     QGraphicsDropShadowEffect, QFileDialog, QMessageBox
 )
-from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QColor, QPainter, QAction
+from PyQt6.QtCore import Qt, QTimer, QSize, pyqtSignal, QThread
+from PyQt6.QtGui import QColor, QPainter, QAction, QPixmap
+
 
 from UI.code_editor import EditorPanel
 from UI.ascii_table import AsciiTablePanel
+from UI.process_worker import ProcessDrawer
+
 
 # ==============================================================================
 # SECCION: UTILIDADES DE ORNAMENTACION (glow neon)
@@ -109,14 +113,42 @@ class IDEWindow(QMainWindow):
             "primario": "#58d6ff", "brillante": "#00e5ff", "tenue": "#123246",
             "alerta": "#ff3b3b", "radio": "10px", "borde_estilo": "solid",
             "fuente": "'Consolas', 'Courier New', monospace",
+        },"codeblocks": {
+            "fondo": "#ffffff", 
+            "fondo_panel": "#f0f0f0",
+            "primario": "#000000", 
+            "brillante": "#0066cc", 
+            "tenue": "#d0d0d0",
+            "alerta": "#cc0000", 
+            "radio": "0px", 
+            "borde_estilo": "solid",
+            "fuente": "'Consolas', 'Courier New', monospace",
         },
+        "macos": {
+            "fondo": "#1e1e1e", 
+            "fondo_panel": "#282828",
+            "primario": "#f5f5f7", 
+            "brillante": "#0a84ff", 
+            "tenue": "#424244",
+            "alerta": "#ff453a", 
+            "radio": "8px", 
+            "borde_estilo": "solid",
+            "fuente": "'-apple-system', 'SF Pro Text', 'Menlo', monospace",
+        }
     }
 
     VERSIONES = {
         "matrix": "Omni-nOS-v3.13.37",
         "pios": "Omni-piOS-v2.1.01p",
         "ctos": "cTOS Server v3.26",
+        "codeblocks": "Code::Blocks v20.03",
+        "macos": "macOS Sequoia v15.0"
     }
+
+    request_stop = pyqtSignal()
+    request_gen_all_diagrams = pyqtSignal()
+    request_gen_diagrams = pyqtSignal()
+    request_on_draw = pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -133,6 +165,22 @@ class IDEWindow(QMainWindow):
         self._aplicar_tema("ctos")
         self._configurar_ornamentos()
         self._reproducir_secuencia_arranque()
+        
+        self.thread = QThread()
+        self.worker = ProcessDrawer()
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.start_process)
+        self.worker.on_draw.connect(self.request_on_draw)
+        #self.request_gen_all_diagrams.connect(self.worker.generate)
+        self.request_stop.connect(self.worker.stop_process)
+        
+        def message_log_drawer(mensaje: str):
+            self._console_log(mensaje)
+        
+        self.worker.on_draw.connect(message_log_drawer)
+
+        self.thread.start()
 
     # --------------------------------------------------------------------
     # setupUI general: arma la ventana en bloques (barra de control, area
@@ -234,13 +282,14 @@ class IDEWindow(QMainWindow):
 
         tabs = QTabWidget()
         tabs.setObjectName("tabsIzquierda")
-        tabs.addTab(self._setup_tabla_registros(), "Registers")
         tabs.addTab(AsciiTablePanel(), "ASCII")
-
+        #tabs.addTab(self._setup_tabla_registros(), "Registers")
+        
         layout.addWidget(tabs)
 
         return panel
 
+    #tabla jorge
     def _setup_tabla_registros(self) -> QTableWidget:
         tabla = QTableWidget(len(self.REGISTROS), 2)
         tabla.setObjectName("tablaRegistros")
@@ -288,11 +337,33 @@ class IDEWindow(QMainWindow):
     # SECCION: Consola de mensajes inferior (no editable) con boton Clear
     # --------------------------------------------------------------------
     def _setup_panel_mensajes(self) -> QWidget:
-        panel = QWidget()
-        layout = QVBoxLayout(panel)
+        # Panel principal contenedor
+        panel_contenedor = QWidget()
+        layout_principal = QHBoxLayout(panel_contenedor)
+        layout_principal.setContentsMargins(0, 0, 0, 0)
+        layout_principal.setSpacing(0)
+
+        # 1. Widget de la Consola (Log)
+        widget_consola = self._crear_subpanel_consola()
+        layout_principal.addWidget(widget_consola)
+
+        # 2. Nuevo Panel a la derecha
+        nuevo_panel = self._crear_panel_graficos()
+        layout_principal.addWidget(nuevo_panel)
+
+        # Opcional: Ajustar proporciones de tamaño (ej. 1:1 o 2:1)
+        layout_principal.setStretch(0, 1) 
+        layout_principal.setStretch(1, 1)
+
+        return panel_contenedor
+
+    def _crear_subpanel_consola(self) -> QWidget:
+        panel_consola = QWidget()
+        layout = QVBoxLayout(panel_consola)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
+        # Cabecera
         cabecera = QWidget()
         cabecera.setObjectName("cabeceraMensajes")
         layout_cabecera = QHBoxLayout(cabecera)
@@ -307,14 +378,96 @@ class IDEWindow(QMainWindow):
 
         layout.addWidget(cabecera)
 
+        # QPlainTextEdit / Consola
         from PyQt6.QtWidgets import QPlainTextEdit
         self.consola_mensajes = QPlainTextEdit()
         self.consola_mensajes.setObjectName("consolaMensajes")
         self.consola_mensajes.setReadOnly(True)
         layout.addWidget(self.consola_mensajes)
 
-        return panel
+        return panel_consola
 
+    def _crear_panel_graficos(self) -> QWidget:
+        panel = QWidget()
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Cabecera
+        cabecera = QWidget()
+        cabecera.setObjectName("cabeceraGraficos")
+        layout_cabecera = QHBoxLayout(cabecera)
+        layout_cabecera.setContentsMargins(10, 4, 10, 4)
+        layout_cabecera.addWidget(self._titulo_seccion("KVX-STATES"))
+        layout_cabecera.addStretch()
+
+        layout.addWidget(cabecera)
+
+        self.panel_img = QWidget()
+        self.panel_img.setObjectName("nuevoPanelDerecho")
+        layout_principal = QHBoxLayout(self.panel_img)
+        layout_principal.setContentsMargins(5, 5, 5, 5)
+        layout_principal.setSpacing(10)
+
+        # --- 1. COLUMNA IZQUIERDA: LISTA DE 7 BOTONES ---
+        layout_botones = QVBoxLayout()
+        layout_botones.setSpacing(4)
+
+        self.label_imagen = QLabel()
+        self.label_imagen.setObjectName("visorImagen")
+        self.label_imagen.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        #self.label_imagen.setScaledContents(True) 
+        #self.label_imagen.setSizePolicy(
+        #    QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        def load_diagra(i):
+            print(i)
+            img = {
+                1:"./Automate/result/diagramas/assing_variables.png",
+                2:"./Automate/result/diagramas/comments.png",
+                3:"./Automate/result/diagramas/conditions.png",
+                4:"./Automate/result/diagramas/loops.png",
+                5:"./Automate/result/diagramas/string_conditions.png",
+                6:"./Automate/result/diagramas/strings.png",
+                7:"./Automate/result/diagramas/variables.png"
+            }
+
+            if os.path.exists(img[i]):
+                pixmap = QPixmap(img[i])  
+                self.label_imagen.setFixedSize(650, 300) 
+                pixmap = pixmap.scaled(
+                    self.label_imagen.size(),                    
+                    Qt.AspectRatioMode.KeepAspectRatio,             
+                    Qt.TransformationMode.SmoothTransformation      
+                )
+                self.label_imagen.setPixmap(pixmap)
+                self.label_imagen.setScaledContents(True)
+
+        self.botones_panel = []  # Referencia para conectar eventos externamente
+        for i in range(1, 8):
+            btn = QPushButton(f"BOTON {i}")
+            btn.setObjectName(f"btnImagen_{i}")
+            # Conectar acción enviando el índice del botón
+            btn.clicked.connect(
+                lambda checked, idx=i: load_diagra(idx)
+            )
+            layout_botones.addWidget(btn)
+            self.botones_panel.append(btn)
+
+        layout_botones.addStretch()  # Empuja los botones hacia arriba
+        layout_principal.addLayout(layout_botones)
+
+        # --- 2. COLUMNA DERECHA: VISOR DE IMAGEN ---
+        self.label_imagen.setText("CARGANDO IMAGENES...")
+        layout_principal.addWidget(self.label_imagen)
+
+        # Asignar proporciones de espacio entre la columna de botones y la imagen
+        layout_principal.setStretch(0, 1)  # Columna botones
+        layout_principal.setStretch(1, 3)  # Espacio imagen
+        #here
+        layout.addWidget(self.panel_img)
+
+        return panel
+    
     # --------------------------------------------------------------------
     # SECCION: Pie de pagina decorativo (prompt + version del "sistema")
     # --------------------------------------------------------------------
@@ -446,6 +599,10 @@ class IDEWindow(QMainWindow):
         for indice, linea in enumerate(self.SECUENCIA_ARRANQUE):
             QTimer.singleShot(180 * indice, lambda texto=linea: self.agregar_mensaje(texto))
 
+    def _console_log(self, message):
+        QTimer.singleShot(180, lambda : self.agregar_mensaje(message))
+        
+
     def _aplicar_glows_tema(self, paleta: dict):
         aplicar_glow(self.label_online, color=paleta["primario"], radio=18)
         aplicar_glow(self.label_version, color=paleta["primario"], radio=8)
@@ -477,19 +634,26 @@ class IDEWindow(QMainWindow):
         self.editor.highlight_current_line()
         self.editor.line_number_area.update()
 
-        fila_pc = self._indice_registros.get("pc")
-        if fila_pc is not None:
-            color_fondo = QColor(paleta["brillante"])
-            color_texto = QColor(paleta["fondo"])
-            for columna in (0, 1):
-                item = self.tabla_registros.item(fila_pc, columna)
-                if item:
-                    item.setBackground(color_fondo)
-                    item.setForeground(color_texto)
+        #fila_pc = self._indice_registros.get("pc")
+        #if fila_pc is not None:
+        #    color_fondo = QColor(paleta["brillante"])
+        #    color_texto = QColor(paleta["fondo"])
+        #    for columna in (0, 1):
+        #        item = self.tabla_registros.item(fila_pc, columna)
+        #        if item:
+        #            item.setBackground(color_fondo)
+        #            item.setForeground(color_texto)
 
         self._aplicar_glows_tema(paleta)
         self.label_version.setText(self.VERSIONES.get(clave, ""))
         self.panel_editor.set_tema_actual(clave)
+
+    def closeEvent(self, event):
+        self.request_stop.emit()
+        self.thread.quit()
+        self.thread.wait()
+        event.accept()
+        
 
     # --------------------------------------------------------------------
     # PLANTILLA DE ESTILOS (usa $placeholders sustituidos con la paleta
@@ -583,6 +747,45 @@ class IDEWindow(QMainWindow):
         QScrollBar:vertical, QScrollBar:horizontal { background: $fondo_panel; width: 10px; height: 10px; }
         QScrollBar::handle { background: $tenue; border-radius: 5px; min-height: 20px; }
         QScrollBar::handle:hover { background: $brillante; }
+        
+        /* ---------------- Panel de Imagenes y Botones Laterales ---------------- */
+        QWidget#nuevoPanelDerecho {
+            background-color: $fondo;
+            border-top: 2px $borde_estilo $primario;
+            border-left: 1px solid $tenue;
+        }
+        
+        /* Visor de imagen */
+        QLabel#visorImagen {
+            background-color: $fondo_panel;
+            border: 1px solid $tenue;
+            border-radius: $radio;
+        }
+        
+        /* Botones laterales (Botón 1 al 7) */
+        QPushButton[objectName^="btnImagen_"] {
+            background-color: $fondo_panel;
+            color: $primario;
+            border: 1px solid $tenue;
+            border-radius: $radio;
+            padding: 8px 10px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+        
+        /* Efecto Hover para botones laterales */
+        QPushButton[objectName^="btnImagen_"]:hover {
+            background-color: $primario; 
+            color: $fondo;
+            border: 1px solid $brillante;
+        }
+        
+        /* Efecto presionado */
+        QPushButton[objectName^="btnImagen_"]:pressed {
+            background-color: $brillante;
+            color: $fondo;
+            border: 1px solid $fondo;
+        }
     """
 
 

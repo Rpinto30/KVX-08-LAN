@@ -8,10 +8,7 @@ from PyQt6.QtGui import QColor, QPainter, QTextFormat, QFont, QTextCursor
 
 from UI.process_worker import ProcessWorker
 
-# ==============================================================================
-# SECCION: GUTTER DE NUMEROS DE LINEA (solo numeracion, sin breakpoints ni
-# marcador de linea de ejecucion, ya que no hay simulador).
-# ==============================================================================
+
 class LineNumberArea(QWidget):
     def __init__(self, editor: "CodeEditor"):
         super().__init__(editor)
@@ -24,20 +21,14 @@ class LineNumberArea(QWidget):
         self.code_editor.line_number_area_paint_event(evento)
 
 
-# ==============================================================================
-# SECCION: EDITOR DE CODIGO
-# QPlainTextEdit extendido con gutter numerado y resaltado del renglon
-# actual. No incluye validacion de sintaxis ni ninguna otra funcionalidad
-# de automata: es unicamente la interfaz grafica del editor.
-# ==============================================================================
 class CodeEditor(QPlainTextEdit):
     request_write = pyqtSignal(str)
     request_stop = pyqtSignal()
+    reques_cout = pyqtSignal()
     
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("editorCodigo")
-        # Colores dinamicos (los actualiza IDEWindow segun el tema activo)
         self.color_normal = QColor("#0c6b1f")
         self.color_linea_actual = QColor("#062b0a")
 
@@ -63,12 +54,10 @@ class CodeEditor(QPlainTextEdit):
         self.thread.started.connect(self.worker.start_process)
         self.request_write.connect(self.worker.write)
         self.request_stop.connect(self.worker.stop_process)
+        self.reques_cout.connect(self.worker.cout)
 
         self.thread.start()
 
-    # --------------------------------------------------------------------
-    # Ancho dinamico del gutter (segun cantidad de digitos)
-    # --------------------------------------------------------------------
     def line_number_area_width(self) -> int:
         digitos = len(str(max(1, self.blockCount())))
         espacio = 20 + self.fontMetrics().horizontalAdvance("9") * digitos
@@ -94,9 +83,6 @@ class CodeEditor(QPlainTextEdit):
             QRect(cr.left(), cr.top(), self.line_number_area_width(), cr.height())
         )
 
-    # --------------------------------------------------------------------
-    # Dibuja unicamente los numeros de renglon.
-    # --------------------------------------------------------------------
     def line_number_area_paint_event(self, evento):
         painter = QPainter(self.line_number_area)
         painter.fillRect(evento.rect(), QColor("#000000"))
@@ -118,9 +104,6 @@ class CodeEditor(QPlainTextEdit):
             top += alto
             numero_bloque += 1
 
-    # --------------------------------------------------------------------
-    # Resalta el renglon donde esta el cursor.
-    # --------------------------------------------------------------------
     def highlight_current_line(self):
         selecciones = []
         if not self.isReadOnly():
@@ -133,29 +116,49 @@ class CodeEditor(QPlainTextEdit):
         self.setExtraSelections(selecciones)
         
     def keyPressEvent(self, event):
-        char: str = event.text()
-        if char != '' or char.isalpha():
-            #print("=".center(100,'='))
-            command = "+"
-            #pos = self.textCursor().position()
-            posy = self.textCursor().blockNumber()+1
-            posx = self.textCursor().columnNumber()
-            out = char
-            if event.key() == Qt.Key.Key_Backspace:
-                command = "-"
-                #pos -= 1
-            #if self.textCursor().position() != len(self.toPlainText()):
-            #out = self.textCursor().block().text() 
-            print(f"Actual: [{posy}, {posx}]{command}{out}")
-            self.request_write.emit(f"{posy}/{posx}{command}{out}")
-        super().keyPressEvent(event)
+        posy = self.textCursor().blockNumber()+1
+        posx = self.textCursor().columnNumber()
         
-        """
-        Informacion: 
-        Fila y posicion
-        Comando (borrado-/insertado+)
-        Caracter
-        """
+        ctrl = event.modifiers() & Qt.KeyboardModifier.ControlModifier
+        shift = event.modifiers() & Qt.KeyboardModifier.ShiftModifier
+        
+        if (self.textCursor().hasSelection()):
+            tecla = event.key()
+            texto_tecla = event.text()
+
+            es_borrado = tecla in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete)
+            es_reemplazo = bool(texto_tecla and texto_tecla.isprintable())
+
+            if es_borrado:
+                texto_eliminado = self.textCursor().selectedText()
+                self.request_write.emit(f"{posy}/{posx}|{self.textCursor().selectionStart()}/{self.textCursor().selectionEnd()};{texto_eliminado}")
+                print(f"{posy}/{posx}|{self.textCursor().selectionStart()}/{self.textCursor().selectionEnd()};{texto_eliminado}")
+            elif es_reemplazo:
+                texto_eliminado = self.textCursor().selectedText()
+                self.request_write.emit(f"{posy}/{posx}~{self.textCursor().selectionStart()}/{self.textCursor().selectionEnd()};{texto_eliminado}")
+                print(f"{posy}/{posx}~{self.textCursor().selectionStart()}/{self.textCursor().selectionEnd()};{texto_eliminado}")
+        else:
+            char: str = event.text().replace("\x7f", "").replace('\t', '')
+
+            if char and (char.isascii() or char != ''):
+                if ctrl:
+                    event.ignore()
+                    return
+                if shift:
+                    if char.isalpha():
+                        event.ignore()
+                        return
+                    
+                command = "+"
+                out = char
+                if (event.key() == Qt.Key.Key_Backspace):
+                    command = "-"
+                print(f"{posy}/{posx}{command}{out}")
+                self.request_write.emit(f"{posy}/{posx}{command}{out}")
+            
+            
+
+        super().keyPressEvent(event)
     
     def closeEvent(self, event):
         self.request_stop.emit()
@@ -183,6 +186,8 @@ class EditorPanel(QWidget):
         ("Matrix", "matrix"),
         ("piOS (SUPERHOT)", "pios"),
         ("cTOS (Watch_Dogs)", "ctos"),
+        ("Day Mode", "codeblocks"),
+        ("MacOs", "macos")
     )
 
     def __init__(self, parent=None):
