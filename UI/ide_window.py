@@ -131,6 +131,16 @@ class IDEWindow(QMainWindow):
         self._paleta_actual = self.PALETAS["ctos"]
 
         self._setup_ui()
+
+        # ---- Timer y conexiones para el análisis en tiempo real del autómata ----
+        self._timer_analisis = QTimer(self)
+        self._timer_analisis.setSingleShot(True)
+        self._timer_analisis.setInterval(250)
+        self._timer_analisis.timeout.connect(self._ejecutar_analisis_automata)
+
+        if hasattr(self, "panel_automata"):
+            self.panel_automata.analisis_completado.connect(self._on_analisis_automata_completado)
+
         self._aplicar_tema("ctos")
         self._configurar_ornamentos()
         self._reproducir_secuencia_arranque()
@@ -357,12 +367,29 @@ class IDEWindow(QMainWindow):
     # API publica de la tabla de transiciones del automata (tab "Autómata"
     # junto al log). 'datos_json' puede ser una lista de dicts, un string
     # JSON o la ruta a un archivo .json (ver AutomatonTablePanel).
-    # --------------------------------------------------------------------
     def actualizar_tabla_automata(self, datos_json):
         self.panel_automata.cargar_json(datos_json)
+        if self.panel_automata.tiene_errores():
+            self.editor.establecer_errores(self.panel_automata.obtener_errores_sintaxis())
 
     def agregar_paso_automata(self, paso: dict):
         self.panel_automata.agregar_paso(paso)
+
+    def _ejecutar_analisis_automata(self):
+        texto = self.editor.toPlainText()
+        if texto.strip():
+            self.panel_automata.analizar_cadena(texto, en_tiempo_real=True)
+        else:
+            self.panel_automata.limpiar()
+            self.editor.limpiar_errores()
+
+    def _on_analisis_automata_completado(self, tiene_errores: bool, errores: list):
+        self.editor.establecer_errores(errores)
+        if tiene_errores:
+            primero = errores[0]
+            self.agregar_mensaje(
+                f"> [Autómata] Sintaxis no válida en línea {primero.get('linea')}: {primero.get('mensaje')}"
+            )
 
     # --------------------------------------------------------------------
     # Archivo: seguimiento de nombre / estado modificado
@@ -370,6 +397,8 @@ class IDEWindow(QMainWindow):
     def _marcar_modificado(self):
         self._modificado = True
         self._refrescar_label_archivo()
+        if hasattr(self, "_timer_analisis"):
+            self._timer_analisis.start()
 
     def _refrescar_label_archivo(self):
         nombre = os.path.basename(self.ruta_archivo_actual) if self.ruta_archivo_actual else "untitled.s"
