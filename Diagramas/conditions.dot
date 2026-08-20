@@ -19,31 +19,20 @@ digraph Grafico4 {
     q23 [shape=circle, label="q23"];
     c2 [shape=ellipse, label="cadena/0-9"];
     q12 [shape=doublecircle, label="q12"];
-    leyenda [shape=none, margin=0, label=<
-        <table border="0" cellborder="0" cellspacing="2" align="left">
-            <tr><td align="left">q9 = espera ||</td></tr>
-            <tr><td align="left">q10 = espera ==</td></tr>
-            <tr><td align="left">q11 = espera &amp;&amp;</td></tr>
-            <tr><td align="left">q22 = espera &lt;</td></tr>
-            <tr><td align="left">q23 = espera &gt;</td></tr>
-        </table>
-    >, fontsize=11];
-
-    { rank=same; c1; leyenda; }
 
     inicio -> c1 [color="red", penwidth=2];
 
-    c1 -> q22 [label=" <", color="#00C853"];
-    c1 -> q9 [label=" ||", color="#00C853", fontcolor="#00C853"]; 
-    c1 -> q10 [label=" ==", color="#00C853"];
-    c1 -> q11 [label=" &&", color="#00C853"];
-    c1 -> q23 [label=" >", color="#00C853"];
-    q22 -> c2 [color="#00C853"];
-    q9 -> c2 [color="#00C853"];
-    q10 -> c2 [color="#00C853"];
-    q11 -> c2 [color="#00C853"];
-    q23 -> c2 [color="#00C853"];
+    c1 -> q22 [label=" <", color="black"];
+    c1 -> q9 [label=" ||", color="black", fontcolor="black"]; 
+    c1 -> q10 [label=" ==", color="black"];
+    c1 -> q11 [label=" &&", color="black"];
+    c1 -> q23 [label=" >", color="black"];
+    q22 -> c2 [color="black"];
+    q9 -> c2 [color="black"];
+    q10 -> c2 [color="black"];
+    q11 -> c2 [color="black"];
+    q23 -> c2 [color="black"];
 
     // Transición final al estado de aceptación q12
-    c2 -> q12 [color="#00C853", penwidth=2];
+    c2 -> q12 [color="black", penwidth=2];
 }
