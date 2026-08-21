@@ -4,79 +4,331 @@
 "transitions": [
 {
 "no": 0,
-"char": "*",
+"char": "@",
 "actual_state": 0,
-"new_state": 24,
+"new_state": 17,
 "description": ""
 },
 {
 "no": 1,
-"char": "{",
-"actual_state": 24,
-"new_state": 2500,
+"char": "(",
+"actual_state": 17,
+"new_state": 15,
 "description": ""
 },
 {
 "no": 2,
+"char": "{",
+"actual_state": 22,
+"new_state": 1000,
+"description": ""
+},
+{
+"no": 3,
 "char": "0",
 "actual_state": 1,
 "new_state": 2,
 "description": ""
 },
 {
-"no": 3,
+"no": 4,
 "char": "x",
 "actual_state": 2,
 "new_state": 2,
 "description": ""
 },
 {
-"no": 4,
+"no": 5,
+"char": "0",
+"actual_state": 2,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 6,
+"char": "}",
+"actual_state": 2,
+"new_state": 1000,
+"description": ""
+},
+{
+"no": 7,
+"char": " ",
+"actual_state": 1000,
+"new_state": 1000,
+"description": ""
+},
+{
+"no": 8,
+"char": "|",
+"actual_state": 1000,
+"new_state": 9000,
+"description": ""
+},
+{
+"no": 9,
+"char": "|",
+"actual_state": 9000,
+"new_state": 12,
+"description": ""
+},
+{
+"no": 10,
+"char": " ",
+"actual_state": 1,
+"new_state": 1,
+"description": ""
+},
+{
+"no": 11,
+"char": "{",
+"actual_state": 1,
+"new_state": 1,
+"description": ""
+},
+{
+"no": 12,
+"char": "0",
+"actual_state": 1,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 13,
+"char": "x",
+"actual_state": 2,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 14,
+"char": "A",
+"actual_state": 2,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 15,
+"char": ",",
+"actual_state": 2,
+"new_state": 3,
+"description": ""
+},
+{
+"no": 16,
+"char": "~",
+"actual_state": 3,
+"new_state": 5,
+"description": ""
+},
+{
+"no": 17,
+"char": "1",
+"actual_state": 5,
+"new_state": 6,
+"description": ""
+},
+{
+"no": 18,
+"char": "2",
+"actual_state": 6,
+"new_state": 6,
+"description": ""
+},
+{
+"no": 19,
+"char": "}",
+"actual_state": 6,
+"new_state": 12,
+"description": ""
+},
+{
+"no": 20,
+"char": ")",
+"actual_state": 12,
+"new_state": 12,
+"description": ""
+},
+{
+"no": 21,
+"char": "\n",
+"actual_state": 12,
+"new_state": 15,
+"description": ""
+},
+{
+"no": 22,
+"char": "\n",
+"actual_state": 15,
+"new_state": 15,
+"description": ""
+},
+{
+"no": 23,
+"char": "{",
+"actual_state": 15,
+"new_state": 1,
+"description": ""
+},
+{
+"no": 24,
+"char": "0",
+"actual_state": 1,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 25,
+"char": "x",
+"actual_state": 2,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 26,
+"char": "0",
+"actual_state": 2,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 27,
+"char": "}",
+"actual_state": 2,
+"new_state": 0,
+"description": ""
+},
+{
+"no": 28,
+"char": ";",
+"actual_state": 0,
+"new_state": 15,
+"description": ""
+},
+{
+"no": 29,
+"char": "\n",
+"actual_state": 15,
+"new_state": 15,
+"description": ""
+},
+{
+"no": 30,
+"char": "$",
+"actual_state": 15,
+"new_state": 7,
+"description": ""
+},
+{
+"no": 31,
+"char": "{",
+"actual_state": 7,
+"new_state": 2500,
+"description": ""
+},
+{
+"no": 32,
+"char": "0",
+"actual_state": 1,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 33,
+"char": "x",
+"actual_state": 2,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 34,
+"char": "4",
+"actual_state": 2,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 35,
+"char": "3",
+"actual_state": 2,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 36,
 "char": "}",
 "actual_state": 2,
 "new_state": 2500,
 "description": ""
 },
 {
-"no": 5,
+"no": 37,
+"char": " ",
+"actual_state": 2500,
+"new_state": 2500,
+"description": ""
+},
+{
+"no": 38,
 "char": "=",
 "actual_state": 2500,
 "new_state": 2501,
 "description": ""
 },
 {
-"no": 6,
+"no": 39,
+"char": " ",
+"actual_state": 2501,
+"new_state": 2501,
+"description": ""
+},
+{
+"no": 40,
 "char": "1",
 "actual_state": 2501,
 "new_state": 25,
 "description": ""
 },
 {
-"no": 7,
-"char": "0",
+"no": 41,
+"char": "2",
 "actual_state": 25,
 "new_state": 25,
 "description": ""
 },
 {
-"no": 8,
+"no": 42,
 "char": ";",
 "actual_state": 25,
 "new_state": 0,
 "description": ""
 },
 {
-"no": 9,
+"no": 43,
 "char": "\n",
 "actual_state": 0,
-"new_state": 0,
+"new_state": 15,
 "description": ""
 },
 {
-"no": 10,
-"char": "<",
-"actual_state": 0,
-"new_state": 19,
+"no": 44,
+"char": "#",
+"actual_state": 15,
+"new_state": 1800,
+"description": ""
+},
+{
+"no": 45,
+"char": "@",
+"actual_state": 1800,
+"new_state": 18,
+"description": ""
+},
+{
+"no": 46,
+"char": "\n",
+"actual_state": 18,
+"new_state": 0,
 "description": ""
 }
 ]

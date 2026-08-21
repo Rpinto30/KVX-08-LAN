@@ -50,7 +50,7 @@ namespace afd{
                 break;
                 case '@': //loop
                     top->id_state = 17;  
-                    push_context(IN_SET_VAR, 17);
+                    push_context(IN_LOOP, 17);
                 break;
                 case '*': //set
                     top->id_state = 24;  
@@ -58,7 +58,7 @@ namespace afd{
                 break;
                 case '%': //conditon
                     top->id_state = 13;  
-                    push_context(IN_SET_VAR, 13);
+                    push_context(IN_CONDITION, 13);
                 break;
                 default:
                 break;
@@ -67,12 +67,25 @@ namespace afd{
         }
 
         void set_grandpa_string(char c, Block* &top){
-            cout<<blocks.size()<<endl;
+            if (blocks.size() >= 2){
+                Block* ptr_debajo = top - 1;
+                cout<<"Prueba: "<<ptr_debajo->control_struct<<endl;
+                if (ptr_debajo->control_struct == IN_CONDITION || ptr_debajo->control_struct == IN_LOOP)
+                {
+                    
+                    cout<<"En loop/condicion: "<<ptr_debajo->control_struct<<", caracter: "<<c<<endl;
+                    if (top->process == DONE)
+                    pop_context(top, 0);
+                    return;
+                }
+            } 
+
             if (blocks.size() == 2){
                 if (c == ';') {
                     pop_context(top, 0);
                 }
-            } else{
+            } 
+            else{
                 pop_context(top);
             }
         }
@@ -105,7 +118,9 @@ namespace afd{
                         top->process = IN;
                     }
                     else if (c == '}'){
+                        
                         top->id_state = 4;
+                        cout<<"... "<<top->id_state<<endl;
                         top->process = DONE;
                         set_grandpa_string(c, top);
                     }
@@ -375,7 +390,13 @@ namespace afd{
                     }
                 break;
                 case 12:
-                    set_grandpa_bool(c, top, new_state); //el unico que lo pide 
+                    if (c == ')'){
+                        cout<<"..."<<endl;
+                        top->process = DONE; 
+                    } else{
+                        top->process = FAIL;
+                    }
+                     
                 break;
 
                 default:
@@ -391,15 +412,34 @@ namespace afd{
             cout<<top->id_state<<endl;
             switch (top->id_state)
             {
+                case 0:
+                    top->id_state = 15;
+                break;
                 case 13:
                     if (c == '('){
                         top->id_state = 15;
-                        push_context(IN_BOOL, 1);
+                        push_context(IN_BOOL, 22);
                     }else{
                         top->process = FAIL;
                     }
                 break;
-            
+                case 15:
+                    if (c == '#'){
+                        top->id_state = 1500;
+                        top->process = IN;
+                    }else{
+                        top->id_state = 15; 
+                        set_parent_case(c, top);
+                    }
+                case 1500:
+                    if (c == '%'){
+                        top->id_state = 16; //abuelo
+                        top->process = DONE;
+                    }
+                break;
+                case 16:
+                    top->process = DONE;
+                break;
                 default:
                 break;
             }
@@ -410,7 +450,40 @@ namespace afd{
         }
 
         void verify_loop(char c, Block* &top){
-
+            cout<<top->id_state<<endl;
+            switch (top->id_state)
+            {
+                case 0:
+                    top->id_state = 15;
+                break;
+                case 17:
+                    if (c == '('){
+                        top->id_state = 15;
+                        push_context(IN_BOOL, 22);
+                    }else{
+                        top->process = FAIL;
+                    }
+                break;
+                case 15:
+                    if (c == '#'){
+                        top->id_state = 1800;
+                        top->process = IN;
+                    }else{
+                        top->id_state = 15; 
+                        set_parent_case(c, top);
+                    }
+                case 1800:
+                    if (c == '@'){
+                        top->id_state = 18; //abuelo
+                        top->process = DONE;
+                    }
+                break;
+                case 18:
+                    top->process = DONE;
+                break;
+                default:
+                break;
+            }
         }
 
         //===================================== TOOLS
