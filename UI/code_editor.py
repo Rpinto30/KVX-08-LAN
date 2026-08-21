@@ -24,6 +24,8 @@ class LineNumberArea(QWidget):
 class CodeEditor(QPlainTextEdit):
     request_write = pyqtSignal(str)
     request_stop = pyqtSignal()
+    caracter_insertado_incremental = pyqtSignal(str, int, int)  # char, posy, posx
+    caracter_borrado_incremental = pyqtSignal()
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -154,8 +156,27 @@ class CodeEditor(QPlainTextEdit):
         self.line_number_area.update()
         
     def keyPressEvent(self, event):
+<<<<<<< HEAD
         posy = self.textCursor().blockNumber()+1
         posx = self.textCursor().columnNumber()
+=======
+        char: str = event.text()
+        posy = self.textCursor().blockNumber() + 1
+        posx = self.textCursor().columnNumber()
+
+        if event.key() == Qt.Key.Key_Backspace:
+            self.caracter_borrado_incremental.emit()
+            self.request_write.emit(f"{posy},{posx}/-")
+        elif char != '' and not event.text().isprintable():
+            pass
+        elif char != '':
+            command = "+"
+            print(f"Actual O(1): [{posy}, {posx}]{command}{char}")
+            self.request_write.emit(f"{posy},{posx}/{command}{char}")
+            self.caracter_insertado_incremental.emit(char, posy, posx)
+
+        super().keyPressEvent(event)
+>>>>>>> origin/tabla_automata
         
         ctrl = event.modifiers() & Qt.KeyboardModifier.ControlModifier
         shift = event.modifiers() & Qt.KeyboardModifier.ShiftModifier
