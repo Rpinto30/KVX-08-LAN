@@ -18,18 +18,7 @@ digraph Grafico3 {
     q25 [shape=ellipse, label="q25"];
     q8 [shape=circle, label="q8"];
 
-    leyenda [shape=none, margin=0, label=<
-        <table border="0" cellborder="0" cellspacing="2" align="left">
-            <tr><td align="left">q7 = inicia variable $</td></tr>
-            <tr><td align="left">q8 = termina variable ;</td></tr>
-            <tr><td align="left">q9 = espera cadena, 0-9, o +/-*</td></tr>
-        </table>
-    >, fontsize=11];
-
-    { rank=same; q0; leyenda; }
     { rank=same; cadena; q8; }
-
-    q0 -> leyenda [style=invis];
     cadena -> q8 [style=invis];
     inicio -> q0 [color="red", penwidth=2];
 
