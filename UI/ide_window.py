@@ -695,7 +695,7 @@ class IDEWindow(QMainWindow):
     def closeEvent(self, event):
         self.request_stop.emit()
         self.thread.quit()
-        self.thread.wait()
+        #self.thread.wait()
         QTimer.singleShot(50, event.accept)
         
 

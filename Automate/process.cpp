@@ -66,13 +66,13 @@ struct RangeCommand {
 };
 
 //problema: unir lineas que se borran
-void check_remove_line(ddl_lines::Node* current, ddl_lines::LineList& lines){
+void check_remove_line(Node* current, ddl_lines::LineList& lines){
     if (current->data->context.empty() || current->data->context == "\n"){
         lines.remove(current->id);
     }
 }
 
-int check_split_lines(ddl_lines::Node* current, ddl_lines::LineList& lines){
+int check_split_lines(Node* current, ddl_lines::LineList& lines){
     string temp_context = strip_new_context(current->data->context);
     size_t split_pos = temp_context.find('\n');
     if (split_pos == string::npos || split_pos == temp_context.length()-1) return -1;
@@ -170,13 +170,13 @@ void insert_one_forward(LineList& lines, Node*& node, int& col, char c){
 2) Enviar al automata el nuevo caracter ingresado
 3) Capturar y enviar a json
 */
+int Transitions::global_number = 0;
 
 int main(){
     string path = std::filesystem::current_path().string();
     string command;
     LineList lines;
     JsonWritter::TransitionsJson json;
-    queue<State> history_states;
     afd::Automata automate;
 
     while (getline(std::cin, command))
@@ -243,8 +243,21 @@ int main(){
 
         //=================PROCESS SECTION=================
         automate.actualizar(command[0], lines.get_line(result.line_key));
-        /*
-        lines.for_each_node([&](Node* temp)
+        while (!automate.get_queue()->empty()) {
+            Transitions temp = automate.get_queue()->front(); 
+            cout<<temp.char_<<endl;
+            JsonWritter::TransitionJsonFragment transition{
+                temp.number,
+                string (1, temp.char_),
+                temp.actual_state,
+                temp.new_state,  
+                ""
+            };
+            json.set_transition(transition);
+            automate.get_queue()->pop(); 
+        }
+
+        /*lines.for_each_node([&](Node* temp)
         {
             int id_next = (temp->next)? temp->next->id : -1;
             int id_prev = (temp->prev)? temp->prev->id : -1;
@@ -260,7 +273,7 @@ int main(){
             delete transition;
         });*/
         
-        json.set_output(0);
+        json.set_output(automate.get_output());
         json.close_json();
         json.create_json(path+"/Automate/result/transitions.json");
         //cout<<"---------- LINEAS: "<<endl;

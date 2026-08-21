@@ -1,4 +1,83 @@
 {
-"output": 0
-
+"output": 1
+,
+"transitions": [
+{
+"no": 0,
+"char": "*",
+"actual_state": 0,
+"new_state": 24,
+"description": ""
+},
+{
+"no": 1,
+"char": "{",
+"actual_state": 24,
+"new_state": 2500,
+"description": ""
+},
+{
+"no": 2,
+"char": "0",
+"actual_state": 1,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 3,
+"char": "x",
+"actual_state": 2,
+"new_state": 2,
+"description": ""
+},
+{
+"no": 4,
+"char": "}",
+"actual_state": 2,
+"new_state": 2500,
+"description": ""
+},
+{
+"no": 5,
+"char": "=",
+"actual_state": 2500,
+"new_state": 2501,
+"description": ""
+},
+{
+"no": 6,
+"char": "1",
+"actual_state": 2501,
+"new_state": 25,
+"description": ""
+},
+{
+"no": 7,
+"char": "0",
+"actual_state": 25,
+"new_state": 25,
+"description": ""
+},
+{
+"no": 8,
+"char": ";",
+"actual_state": 25,
+"new_state": 0,
+"description": ""
+},
+{
+"no": 9,
+"char": "\n",
+"actual_state": 0,
+"new_state": 0,
+"description": ""
+},
+{
+"no": 10,
+"char": "<",
+"actual_state": 0,
+"new_state": 19,
+"description": ""
+}
+]
 }

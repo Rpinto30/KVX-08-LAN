@@ -35,7 +35,7 @@ class ProcessWorker(QObject):
         for line in iter(self.process.stdout.readline, ''):
             if line:
                 if line.strip() != "":
-                    print(f"COUT<< {line.strip()}")
+                    print(f"{line.strip()}")
         self.process.stdout.close()
 
     def _read_stderr(self):

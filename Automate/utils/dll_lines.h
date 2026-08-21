@@ -13,17 +13,6 @@ using namespace std;
 namespace ddl_lines{
     
 
-struct Node {
-    int id;
-    Line* data;
-    Node* prev;
-    Node* next;
-
-    Node(int id_, Line* data_)
-        : id(id_), data(data_), prev(nullptr), next(nullptr) {}
-};
-
-
 class LineList {
 private:
     Node* head;
@@ -57,6 +46,7 @@ public:
             node->prev = tail;
             tail = node;
         }
+        data->set_parent(node);
         index[node->id] = node;
         return next_id++;
     }
@@ -70,6 +60,7 @@ public:
             node->prev = tail;
             tail = node;
         }
+        data->set_parent(node);
         index[key] = node;
         return node;
     }
@@ -84,7 +75,7 @@ public:
         return it != index.end() ? it->second : nullptr;
     }
 
-    int insert_after(int after_id, Line* new_line) {
+    /*int insert_after(int after_id, Line* new_line) {
         Node* prev_node = get_node(after_id);
         if (!prev_node) return -1; 
 
@@ -98,13 +89,16 @@ public:
         if (next_node) next_node->prev = node;
         else tail = node;
 
+        new_line->set_parent(node);
         index[node->id] = node;
         return next_id++;
-    }
+    }*/
 
     void remove(int id) {
         Node* node = get_node(id);
         if (!node) return;
+
+        Node* next_node = node->next;
 
         if (node->prev) node->prev->next = node->next;
         else head = node->next;
@@ -115,6 +109,13 @@ public:
         index.erase(id);
         delete node->data;
         delete node;
+
+        for (Node* cur = next_node; cur != nullptr; cur = cur->next) {
+            index.erase(cur->id);
+            cur->id -= 1;
+            cur->data->command.line_key = cur->id;
+            index[cur->id] = cur;
+        }
     }
 
     void for_each_lines(const std::function<void(Line*)>& fn) const {
@@ -141,6 +142,7 @@ public:
         for (Node* cur = next_node; cur != nullptr; cur = cur->next) {
             index.erase(cur->id);
             cur->id += 1;
+            cur->data->command.line_key = cur->id;
             index[cur->id] = cur;
         }
 
@@ -154,6 +156,7 @@ public:
         else tail = node;
 
         index[new_key] = node;
+        new_line->set_parent(node);
         return node;
     }
 
