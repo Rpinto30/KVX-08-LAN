@@ -120,6 +120,69 @@ def generar_diagramas(ruta_json, carpeta_base_dot):
             print(f"Paso {i+1}: Nodo {nombre_nodo} no existe en ningun diagrama.")
 
 
+def gen_animation(ruta_json, ruta_archivo_dot):
+    datos = __read_json(ruta_json)
+    if not datos: 
+        return
+    
+    transiciones = datos.get("transitions", [])
+    if not transiciones and "actual_state" in datos:
+        transiciones = [{"new_state": datos["actual_state"]}]
+
+    if not os.path.exists(ruta_archivo_dot):
+        print(f"Error: El archivo {ruta_archivo_dot} no existe.")
+        return
+
+    with open(ruta_archivo_dot, "r", encoding="utf-8") as f:
+        dot_base = f.read()
+
+    nombre_archivo = os.path.basename(ruta_archivo_dot)
+    nombre_diagrama = os.path.splitext(nombre_archivo)[0]
+
+    mapeo_nodos = {
+        100: "boolean", 
+        101: "cadena"
+    }
+    
+    lineas_dot = [linea.strip() for linea in dot_base.splitlines()]
+
+    for i, paso in enumerate(transiciones):
+        estado_id = paso.get("new_state", 0)
+        if estado_id == -1:
+            print(f"Paso {i+1}: Estado -1 (Error). Ignorado.")
+            continue
+
+        nombre_nodo = mapeo_nodos.get(estado_id, f"q{estado_id}")
+        
+        nodo_encontrado = any(
+            linea.startswith(f"{nombre_nodo} [") or linea.startswith(f"{nombre_nodo}[")
+            for linea in lineas_dot
+        )
+
+        if nodo_encontrado:
+            # Usamos siempre el mismo nombre fijo para sobrescribir la imagen existente
+            ruta_dot_salida = os.path.join(CARPETA_SALIDA, f"{nombre_diagrama}.dot")
+            ruta_png_out = os.path.join(CARPETA_SALIDA, f"{nombre_diagrama}.png")
+            
+            insertar_color = f'\n    {nombre_nodo} [style="filled", fillcolor="#b3ffcc", color="#00C853", penwidth=3.5];\n}}'
+            dot_modificado = dot_base.rpartition('}')[0] + insertar_color
+            
+            with open(ruta_dot_salida, "w", encoding="utf-8") as archivo:
+                archivo.write(dot_modificado)
+
+            try:
+                # Graphviz sobrescribirá el archivo .png automáticamente
+                subprocess.run(["dot", "-Tpng", ruta_dot_salida, "-o", ruta_png_out], check=True)
+                print(f"Paso {i+1}: Imagen sobrescrita con el nodo '{nombre_nodo}'")
+            except subprocess.CalledProcessError as e:
+                print(f"Error al generar PNG del paso {i+1}: {e}")
+            finally:
+                if os.path.exists(ruta_dot_salida):
+                    os.remove(ruta_dot_salida)
+        else:
+            print(f"Paso {i+1}: Nodo '{nombre_nodo}' no existe en {nombre_archivo}.")
+
+
 #if __name__ == "__main__":
 #    
 #    

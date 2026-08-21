@@ -240,7 +240,9 @@ int main(){
     string command;
     LineList lines;
     JsonWritter::TransitionsJson json;
-    
+    json.set_output(0);
+    json.close_json();
+    json.create_json(path+"/Automate/result/transitions.json");
 
     while (getline(std::cin, command))
     {

@@ -264,7 +264,7 @@ class KVXAutomatonEvaluator:
                     "nuevo_estado": nuevo_est,
                     "explicacion": desc,
                     "inicio": False,
-                    "aceptacion": (nuevo_est in ("q4", "q_acept") or "acept" in desc.lower()),
+                    "aceptacion": (nuevo_est in ("q0", "q_acept") or "acept" in desc.lower()),
                     "es_error": es_err,
                     "linea": num_linea,
                     "columna": col
@@ -500,8 +500,8 @@ class AutomatonTablePanel(QWidget):
                    nuevo_estado in ("q_err", "ERR")
 
         marca_inicio = dato.get("inicio", (paso in (0, "0")) and not es_error)
-        marca_aceptacion = dato.get("aceptacion", ("acept" in explicacion.lower() or nuevo_estado in ("q4", "q_acept")) and not es_error)
-
+        marca_aceptacion = dato.get("aceptacion", ("acept" in explicacion.lower() or nuevo_estado in ("q0", "q_acept")) and not es_error)
+        
         if marca_inicio and not estado_actual.startswith("→"):
             estado_actual = f"→ {estado_actual}"
         if marca_aceptacion and not nuevo_estado.startswith("◎"):
@@ -539,3 +539,21 @@ class AutomatonTablePanel(QWidget):
             col = dato.get("columna", 1)
             self.sintaxis_no_valida_detectada.emit(linea, col, explicacion)
 
+    def cargar_json_singleshot(self, datos, interval_ms: int = 60):
+        self.limpiar()
+        cola = self._normalizar_datos(datos)
+
+        def _procesar_siguiente(indice: int):
+            if indice >= len(cola):
+                self.analisis_completado.emit(self.tiene_errores(), self.errores_sintaxis)
+                return
+            paso = cola[indice]
+            self.agregar_paso(paso)
+            if paso.get("es_error"):
+                self.errores_sintaxis.append({
+                    "linea": paso.get("linea", 1), "columna": paso.get("columna", 1),
+                    "mensaje": paso.get("explicacion", ""), "caracter": paso.get("lee", "")
+                })
+            QTimer.singleShot(interval_ms, lambda: _procesar_siguiente(indice + 1))
+
+        _procesar_siguiente(0)

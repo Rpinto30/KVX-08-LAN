@@ -27,7 +27,8 @@
 
 import os
 import sys
-import time
+import subprocess
+import json
 from string import Template
 
 from PyQt6.QtWidgets import (
@@ -200,6 +201,15 @@ class IDEWindow(QMainWindow):
         self.worker.on_draw.connect(message_log_drawer)
 
         self.thread.start()
+        
+        
+        #TABLA
+        self._timer_polling_trace = QTimer(self)
+        self._timer_polling_trace.setInterval(5000)  # 5000 ms = 5 segundos
+        self._timer_polling_trace.timeout.connect(self._poll_trace_automata)
+        self._ruta_trace_json: str | None = None  # ruta del archivo a vigilar
+        self._ultimo_mtime_trace: float | None = None  # para detectar cambios reales
+        self.iniciar_polling_trace("./Automate/result/transitions.json", interval_ms=3000)
 
     # --------------------------------------------------------------------
     # setupUI general: arma la ventana en bloques (barra de control, area
@@ -312,29 +322,43 @@ class IDEWindow(QMainWindow):
         return panel
 
     #tabla jorge
-    def _setup_tabla_registros(self) -> QTableWidget:
-        tabla = QTableWidget(len(self.REGISTROS), 2)
-        tabla.setObjectName("tablaRegistros")
-        tabla.setHorizontalHeaderLabels(["Registro", "Valor"])
-        tabla.verticalHeader().setVisible(False)
-        tabla.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        tabla.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
-        tabla.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        tabla.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        tabla.setShowGrid(False)
+    
+    def cargar_trace_automata(self, datos_json: dict, interval_ms: int = 60):
+        self.panel_automata.cargar_json_singleshot(datos_json, interval_ms=interval_ms)
+        self._console_log("> Traza del autómata actualizada.")
+        
+    
+    def iniciar_polling_trace(self, ruta_json: str, interval_ms: int = 5000):
+        """Empieza a vigilar un archivo JSON y recargarlo cada interval_ms si cambia."""
+        self._ruta_trace_json = ruta_json
+        self._ultimo_mtime_trace = None
+        self._timer_polling_trace.setInterval(interval_ms)
+        self._timer_polling_trace.start()
+        self._console_log(f"> Vigilando traza del autómata: {ruta_json} (cada {interval_ms/1000:.0f}s)")
 
-        self._indice_registros: dict[str, int] = {}
-        for fila, nombre in enumerate(self.REGISTROS):
-            item_nombre = QTableWidgetItem(nombre)
-            item_valor = QTableWidgetItem("00000000")
-            item_nombre.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-            item_valor.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-            tabla.setItem(fila, 0, item_nombre)
-            tabla.setItem(fila, 1, item_valor)
-            self._indice_registros[nombre] = fila
+    def detener_polling_trace(self):
+        self._timer_polling_trace.stop()
+        self._console_log("> Polling de traza del autómata detenido.")
 
-        self.tabla_registros = tabla
-        return tabla
+    def _poll_trace_automata(self):
+        ruta = self._ruta_trace_json
+        if not ruta or not os.path.exists(ruta):
+            return
+
+        mtime = os.path.getmtime(ruta)
+        if mtime == self._ultimo_mtime_trace:
+            return  # no ha cambiado, no hacer nada
+
+        try:
+            with open(ruta, "r", encoding="utf-8") as f:
+                datos = json.load(f)
+        except (OSError, json.JSONDecodeError) as e:
+            self._console_log(f"> Error al leer traza JSON: {e}")
+            return
+
+        self._ultimo_mtime_trace = mtime
+        self.cargar_trace_automata(datos, interval_ms=60)
+        
 
     def _titulo_seccion(self, texto: str) -> QLabel:
         etiqueta = QLabel(texto)
@@ -424,6 +448,12 @@ class IDEWindow(QMainWindow):
         layout_cabecera.setContentsMargins(10, 4, 10, 4)
         layout_cabecera.addWidget(self._titulo_seccion("KVX-STATES"))
         layout_cabecera.addStretch()
+        
+        bt_gen = QPushButton("Gen")
+        bt_gen.setObjectName("botonClear")
+        # Conectamos directamente a nuestro método con animación
+        bt_gen.clicked.connect(self.generar_imagenes)
+        layout_cabecera.addWidget(bt_gen)
 
         layout.addWidget(cabecera)
 
@@ -440,56 +470,146 @@ class IDEWindow(QMainWindow):
         self.label_imagen = QLabel()
         self.label_imagen.setObjectName("visorImagen")
         self.label_imagen.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        #self.label_imagen.setScaledContents(True) 
-        #self.label_imagen.setSizePolicy(
-        #    QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        # Mapeo de los 7 diagramas (rutas dot y png)
+        self.módulo_diagramas = {
+            1: ("assing_variables", os.path.join("../Diagramas", "assing_variables.dot"), os.path.join("../Automate/result/diagramas", "assing_variables.png")),
+            2: ("comments",         os.path.join("../Diagramas", "comments.dot"),         os.path.join("../Automate/result/diagramas", "comments.png")),
+            3: ("conditions",       os.path.join("../Diagramas", "conditions.dot"),       os.path.join("../Automate/result/diagramas", "conditions.png")),
+            4: ("loops",            os.path.join("../Diagramas", "loops.dot"),            os.path.join("../Automate/result/diagramas", "loops.png")),
+            5: ("string_conditions",os.path.join("../Diagramas", "string_conditions.dot"),os.path.join("../Automate/result/diagramas", "string_conditions.png")),
+            6: ("strings",          os.path.join("../Diagramas", "strings.dot"),          os.path.join("../Automate/result/diagramas", "strings.png")),
+            7: ("variables",        os.path.join("../Diagramas", "variables.dot"),        os.path.join("../Automate/result/diagramas", "variables.png")),
+        }
+
+        self.diagrama_actual_idx = 1
+
         def load_diagra(i):
-            img = {
-                1:"./Automate/result/diagramas/assing_variables.png",
-                2:"./Automate/result/diagramas/comments.png",
-                3:"./Automate/result/diagramas/conditions.png",
-                4:"./Automate/result/diagramas/loops.png",
-                5:"./Automate/result/diagramas/string_conditions.png",
-                6:"./Automate/result/diagramas/strings.png",
-                7:"./Automate/result/diagramas/variables.png"
-            }
+            self.diagrama_actual_idx = i
+            _, _, ruta_png = self.módulo_diagramas[i]
+            self.mostrar_imagen_en_label(ruta_png)
 
-            if os.path.exists(img[i]):
-                pixmap = QPixmap(img[i])  
-                self.label_imagen.setFixedSize(650, 300) 
-                pixmap = pixmap.scaled(
-                    self.label_imagen.size(),                    
-                    Qt.AspectRatioMode.KeepAspectRatio,             
-                    Qt.TransformationMode.SmoothTransformation      
-                )
-                self.label_imagen.setPixmap(pixmap)
-                self.label_imagen.setScaledContents(True)
-
-        self.botones_panel = []  # Referencia para conectar eventos externamente
+        nombres = [v[0] for v in self.módulo_diagramas.values()]
+        self.botones_panel = []
         for i in range(1, 8):
             btn = QPushButton(f"BOTON {i}")
+            btn.setText(nombres[i-1])
             btn.setObjectName(f"btnImagen_{i}")
-            # Conectar acción enviando el índice del botón
-            btn.clicked.connect(
-                lambda checked, idx=i: load_diagra(idx)
-            )
+            btn.clicked.connect(lambda checked, idx=i: load_diagra(idx))
             layout_botones.addWidget(btn)
             self.botones_panel.append(btn)
 
-        layout_botones.addStretch()  # Empuja los botones hacia arriba
+        layout_botones.addStretch()
         layout_principal.addLayout(layout_botones)
 
         # --- 2. COLUMNA DERECHA: VISOR DE IMAGEN ---
         self.label_imagen.setText("CARGANDO IMAGENES...")
         layout_principal.addWidget(self.label_imagen)
 
-        # Asignar proporciones de espacio entre la columna de botones y la imagen
-        layout_principal.setStretch(0, 1)  # Columna botones
-        layout_principal.setStretch(1, 3)  # Espacio imagen
-        #here
+        layout_principal.setStretch(0, 1)
+        layout_principal.setStretch(1, 3)
         layout.addWidget(self.panel_img)
 
         return panel
+
+    def mostrar_imagen_en_label(self, ruta_png):
+        """Método auxiliar para cargar y renderizar la imagen en self.label_imagen sin problemas de caché."""
+        if os.path.exists(ruta_png):
+            QPixmapCache.clear()  # Invalida la caché de imágenes de PyQt
+            pixmap = QPixmap(ruta_png)
+            self.label_imagen.setFixedSize(650, 300)
+            pixmap = pixmap.scaled(
+                self.label_imagen.size(),
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation
+            )
+            self.label_imagen.setPixmap(pixmap)
+            self.label_imagen.setScaledContents(True)
+
+    def generar_imagenes(self):
+        """Genera imágenes paso a paso modificando y sobrescribiendo el archivo .png correspondiente."""
+        # 1. Cargar el JSON (Asegúrate de tener este método o ruta)
+        ruta_json = "./Automate/result/transitions.json"  # Cambia por tu ruta real
+        datos = self.__read_json(ruta_json) if hasattr(self, '__read_json') else {}
+        
+        if not datos:
+            print("No se encontraron datos en el JSON.")
+            return
+
+        transiciones = datos.get("transitions", [])
+        if not transiciones and "actual_state" in datos:
+            transiciones = [{"new_state": datos["actual_state"]}]
+
+        mapeo_nodos = {100: "boolean", 101: "cadena"}
+
+        # 2. Cargar en memoria las plantillas de los archivos DOT existentes
+        diagramas_dot = {}
+        for idx, (nombre, ruta_dot, ruta_png) in self.módulo_diagramas.items():
+            if os.path.exists(ruta_dot):
+                with open(ruta_dot, "r", encoding="utf-8") as f:
+                    diagramas_dot[idx] = {
+                        "nombre": nombre,
+                        "ruta_dot": ruta_dot,
+                        "ruta_png": ruta_png,
+                        "contenido": f.read(),
+                        "lineas": [line.strip() for line in f.read().splitlines()]
+                    }
+
+        # 3. Filtrar los pasos a procesar
+        pasos_a_procesar = []
+        for i, paso in enumerate(transiciones):
+            estado_id = paso.get("new_state", 0)
+            if estado_id == -1:
+                continue
+            nombre_nodo = mapeo_nodos.get(estado_id, f"q{estado_id}")
+            pasos_a_procesar.append((i + 1, nombre_nodo))
+
+        # 4. Procesar secuencia secuencialmente con 2 segundos de retraso
+        def procesar_paso(indice=0):
+            if indice >= len(pasos_a_procesar):
+                print("Animación finalizada exitosamente.")
+                return
+
+            num_paso, nombre_nodo = pasos_a_procesar[indice]
+
+            # Buscar en cuál diagrama está presente el nodo
+            for idx, diag in diagramas_dot.items():
+                nodo_encontrado = any(
+                    linea.startswith(f"{nombre_nodo} [") or linea.startswith(f"{nombre_nodo}[")
+                    for linea in diag["lineas"]
+                )
+
+                if nodo_encontrado:
+                    ruta_dot_temp = os.path.join(CARPETA_SALIDA, f"{diag['nombre']}_temp.dot")
+                    ruta_png_out = diag["ruta_png"]  # Sobrescribe la imagen con el mismo nombre
+
+                    # Modificar DOT agregando estilos de resaltado
+                    insertar_color = f'\n    {nombre_nodo} [style="filled", fillcolor="#b3ffcc", color="#00C853", penwidth=3.5];\n}}'
+                    dot_modificado = diag["contenido"].rpartition('}')[0] + insertar_color
+
+                    with open(ruta_dot_temp, "w", encoding="utf-8") as f_out:
+                        f_out.write(dot_modificado)
+
+                    try:
+                        # Renderizar imagen con Graphviz (Sobrescribe la existente)
+                        subprocess.run(["dot", "-Tpng", ruta_dot_temp, "-o", ruta_png_out], check=True)
+                        print(f"Paso {num_paso}: Nodo '{nombre_nodo}' resaltado en {diag['nombre']}.png")
+
+                        # Si la imagen procesada es la que el usuario tiene seleccionada en el visor, actualizar
+                        if self.diagrama_actual_idx == idx:
+                            self.mostrar_imagen_en_label(ruta_png_out)
+
+                    except subprocess.CalledProcessError as e:
+                        print(f"Error al compilar Graphviz en el paso {num_paso}: {e}")
+                    finally:
+                        if os.path.exists(ruta_dot_temp):
+                            os.remove(ruta_dot_temp)
+
+            # Programa el siguiente paso a los 2000 ms (2 segundos)
+            QTimer.singleShot(2000, lambda: procesar_paso(indice + 1))
+
+        # Inicia la animación inmediatamente con el paso 0
+        procesar_paso(0)
     
     # --------------------------------------------------------------------
     # SECCION: Pie de pagina decorativo (prompt + version del "sistema")
