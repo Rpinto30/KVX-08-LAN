@@ -31,6 +31,8 @@ class LineNumberArea(QWidget):
 class CodeEditor(QPlainTextEdit):
     request_write = pyqtSignal(str)
     request_stop = pyqtSignal()
+    caracter_insertado_incremental = pyqtSignal(str, int, int)  # char, posy, posx
+    caracter_borrado_incremental = pyqtSignal()
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -172,20 +174,20 @@ class CodeEditor(QPlainTextEdit):
         
     def keyPressEvent(self, event):
         char: str = event.text()
-        if char != '' and char.isalpha():
-            #print("=".center(100,'='))
+        posy = self.textCursor().blockNumber() + 1
+        posx = self.textCursor().columnNumber()
+
+        if event.key() == Qt.Key.Key_Backspace:
+            self.caracter_borrado_incremental.emit()
+            self.request_write.emit(f"{posy},{posx}/-")
+        elif char != '' and not event.text().isprintable():
+            pass
+        elif char != '':
             command = "+"
-            #pos = self.textCursor().position()
-            posy = self.textCursor().blockNumber()+1
-            posx = self.textCursor().columnNumber()
-            out = char
-            if event.key() == Qt.Key.Key_Backspace:
-                command = "-"
-                #pos -= 1
-            #if self.textCursor().position() != len(self.toPlainText()):
-            #out = self.textCursor().block().text() 
-            print(f"Actual: [{posy}, {posx}]{command}{out}")
-            self.request_write.emit(f"{posy},{posx}/{command}{out}")
+            print(f"Actual O(1): [{posy}, {posx}]{command}{char}")
+            self.request_write.emit(f"{posy},{posx}/{command}{char}")
+            self.caracter_insertado_incremental.emit(char, posy, posx)
+
         super().keyPressEvent(event)
         
         """

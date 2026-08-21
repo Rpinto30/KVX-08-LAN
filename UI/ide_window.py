@@ -140,6 +140,9 @@ class IDEWindow(QMainWindow):
 
         if hasattr(self, "panel_automata"):
             self.panel_automata.analisis_completado.connect(self._on_analisis_automata_completado)
+            if hasattr(self, "editor"):
+                self.editor.caracter_insertado_incremental.connect(self.panel_automata.procesar_paso_incremental_o1)
+                self.editor.caracter_borrado_incremental.connect(self.panel_automata.desprocesar_paso_incremental_o1)
 
         self._aplicar_tema("ctos")
         self._configurar_ornamentos()
