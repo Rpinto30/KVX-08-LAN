@@ -4,154 +4,70 @@
 "transitions": [
 {
 "no": 0,
-"char": "$",
+"char": "c",
 "actual_state": 0,
-"new_state": 7,
-"description": ""
-},
-{
-"no": 1,
-"char": "{",
-"actual_state": 7,
-"new_state": 2500,
-"description": ""
-},
-{
-"no": 2,
-"char": "0",
-"actual_state": 1,
-"new_state": 2,
-"description": ""
-},
-{
-"no": 3,
-"char": "x",
-"actual_state": 2,
-"new_state": 2,
-"description": ""
-},
-{
-"no": 4,
-"char": "4",
-"actual_state": 2,
-"new_state": 2,
-"description": ""
-},
-{
-"no": 5,
-"char": "4",
-"actual_state": 2,
-"new_state": 2,
-"description": ""
-},
-{
-"no": 6,
-"char": ",",
-"actual_state": 2,
-"new_state": 3,
-"description": ""
-},
-{
-"no": 7,
-"char": "0",
-"actual_state": 3,
-"new_state": 2,
-"description": ""
-},
-{
-"no": 8,
-"char": "x",
-"actual_state": 2,
-"new_state": 2,
-"description": ""
-},
-{
-"no": 9,
-"char": "4",
-"actual_state": 2,
-"new_state": 2,
-"description": ""
-},
-{
-"no": 10,
-"char": "A",
-"actual_state": 2,
-"new_state": 2,
-"description": ""
-},
-{
-"no": 11,
-"char": ",",
-"actual_state": 2,
-"new_state": 3,
-"description": ""
-},
-{
-"no": 12,
-"char": "~",
-"actual_state": 3,
-"new_state": 5,
-"description": ""
-},
-{
-"no": 13,
-"char": "1",
-"actual_state": 5,
-"new_state": 6,
-"description": ""
-},
-{
-"no": 14,
-"char": "}",
-"actual_state": 6,
-"new_state": 2500,
-"description": ""
-},
-{
-"no": 15,
-"char": " ",
-"actual_state": 2500,
-"new_state": 2500,
-"description": ""
-},
-{
-"no": 16,
-"char": "=",
-"actual_state": 2500,
-"new_state": 2501,
-"description": ""
-},
-{
-"no": 17,
-"char": " ",
-"actual_state": 2501,
-"new_state": 2501,
-"description": ""
-},
-{
-"no": 18,
-"char": "-",
-"actual_state": 2501,
-"new_state": 25,
-"description": ""
-},
-{
-"no": 19,
-"char": "1",
-"actual_state": 25,
-"new_state": 25,
-"description": ""
-},
-{
-"no": 20,
-"char": ";",
-"actual_state": 25,
 "new_state": 0,
 "description": ""
 },
 {
-"no": 21,
-"char": "\n",
+"no": 1,
+"char": "x",
+"actual_state": 0,
+"new_state": 0,
+"description": ""
+},
+{
+"no": 2,
+"char": "c",
+"actual_state": 0,
+"new_state": 0,
+"description": ""
+},
+{
+"no": 3,
+"char": "v",
+"actual_state": 0,
+"new_state": 0,
+"description": ""
+},
+{
+"no": 4,
+"char": "x",
+"actual_state": 0,
+"new_state": 0,
+"description": ""
+},
+{
+"no": 5,
+"char": "c",
+"actual_state": 0,
+"new_state": 0,
+"description": ""
+},
+{
+"no": 6,
+"char": "v",
+"actual_state": 0,
+"new_state": 0,
+"description": ""
+},
+{
+"no": 7,
+"char": "x",
+"actual_state": 0,
+"new_state": 0,
+"description": ""
+},
+{
+"no": 8,
+"char": "c",
+"actual_state": 0,
+"new_state": 0,
+"description": ""
+},
+{
+"no": 9,
+"char": "v",
 "actual_state": 0,
 "new_state": 0,
 "description": ""

@@ -266,6 +266,9 @@ class EditorPanel(QWidget):
 
         self.editor = CodeEditor()
         self.editor.textChanged.connect(self.contenido_modificado.emit)
+        #self.editor.establecer_errores([
+        #    {"linea": 1, "mensaje": "Token inesperado"},
+        #])
 
         tabs_editor.addTab(self.editor, "Editor (Ctrl+E)")
 
