@@ -61,6 +61,7 @@ namespace afd{
                     push_context(IN_CONDITION, 13);
                 break;
                 default:
+                    //top->process = FAIL;
                 break;
             }
             top->process = IN;
@@ -81,16 +82,20 @@ namespace afd{
             } 
 
             if (blocks.size() == 2){
+                cout<<"PRIMERO"<<endl;
                 if (c == ';') {
                     pop_context(top, 0);
+                } else{
+                    top->process = FAIL;
                 }
             } 
             else{
+                cout<<"donde sea string"<<endl;
                 pop_context(top);
             }
         }
 
-        void verify_string(char c, Block* &top){
+        void verify_string(char c, Block* &top, bool no_semicolon= true){
             cout<<top->id_state<<endl;
             switch (top->id_state)
             {
@@ -141,7 +146,18 @@ namespace afd{
                     }
                 break;
                 case 4:
-                    top->process = DONE;
+                    if (no_semicolon){
+                        top->process = DONE;
+                        set_grandpa_string(c, top);
+                    } else{
+                        if (c == ';'){
+                            top->process = DONE;
+                        } else{
+                            top->process = FAIL;
+                        }
+                    }
+                    
+                    
                 break;
                 case 5:
                     if (is_number(c)){
@@ -157,7 +173,7 @@ namespace afd{
                         top->process = IN;
                     } else if (c == '}'){
                         top->id_state = 4;
-                        top->process = IN;
+                        //top->process = IN;
                         set_grandpa_string(c, top);
                     }
                     else{
@@ -424,6 +440,7 @@ namespace afd{
                     }
                 break;
                 case 15:
+                    cout<<c<<endl;
                     if (c == '#'){
                         top->id_state = 1500;
                         top->process = IN;
@@ -465,6 +482,7 @@ namespace afd{
                     }
                 break;
                 case 15:
+                    cout<<c<<endl;
                     if (c == '#'){
                         top->id_state = 1800;
                         top->process = IN;
@@ -516,8 +534,20 @@ namespace afd{
             return blocks.back().id_state;
         }
 
-        int get_actual_state(){ return blocks.back().id_state; }
-        queue<Transitions>* get_queue() {return &history_transitions; }
+        int get_actual_state(){ return actual_state; }
+            queue<Transitions>* get_queue() {return &history_transitions; }
+
+        AutomataContext capture_context() const {
+            return AutomataContext{ actual_state, actual_passed, blocks, valid, true };
+        }
+
+        void restore_context(const AutomataContext& ctx){
+            actual_state = ctx.actual_state;
+            actual_passed = ctx.actual_passed;
+            blocks = ctx.blocks;   
+            valid = ctx.valid;
+            while (!history_transitions.empty()) history_transitions.pop();
+        }
 
         /*process_line = actual_line;
         Line* prev_line = process_line->get_prev_line();
@@ -525,15 +555,26 @@ namespace afd{
             cout<<prev_line->last_state.id<<endl;
         }*/
 
-        void actualizar(char c, Line* actual_line){
+        void reset(){
+            blocks.clear();
+            blocks.push_back(Block{NOTHING, 0, DONE});
+            actual_state = 0;
+            actual_passed = NOTHING;
+            valid = false;
+            while (!history_transitions.empty()) history_transitions.pop();
+        }
+
+        void process_afd(char c, int line_key){
             Block* top = &blocks.back();
             if (top == nullptr) return;
             int previus_state = top->id_state;
+            cout<<"-----------------------------------------------------"<<endl;
             cout<<"Se ingreso :"<<c<<" , el estado actual: "<<previus_state<<endl;
             cout<<"Control struct: "<<top->control_struct<<endl;
             switch (top->control_struct)
             {
                 case NOTHING: // q0
+                    //top->process = DONE;
                     set_parent_case(c, top);
                 break;
                 case IN_STRING: // q1
@@ -589,15 +630,16 @@ namespace afd{
                 default:
                 break;
             }
-
-            if (top->process == DONE) {
+            cout<<"Deicion final del process: "<<top->process<<endl;
+            if (top->process == DONE || top->id_state == 0) {
                 valid = true;
             } else {
                 valid = false;
             }
 
+
             cout<<"LUEGO DEL PROCESAMIENTO el estado actual: "<<top->id_state<<endl;
-            history_transitions.push(Transitions{c, previus_state, top->id_state});
+            history_transitions.push(Transitions{c, previus_state, top->id_state, line_key});
         }
     };
 }

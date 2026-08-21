@@ -1,6 +1,8 @@
 #ifndef PARAMS
 #define PARAMS
 #include <iostream>
+#include <algorithm> 
+#include <cctype>  
 
 using namespace std;
 
@@ -19,8 +21,9 @@ typedef struct Transitions{
     int actual_state;
     int new_state;
     string description;
+    int line_index;
     
-    Transitions(char c, int prev_state, int cur_state): number(global_number), char_(c), actual_state(prev_state), new_state(cur_state) {
+    Transitions(char c, int prev_state, int cur_state, int line_index): number(global_number), char_(c), actual_state(prev_state), new_state(cur_state), line_index(line_index) {
         global_number++;
     }
 
@@ -47,42 +50,9 @@ struct Node {
         : id(id_), data(data_), prev(nullptr), next(nullptr) {}
 };
 
-typedef struct Line{
-    string context; 
-    ParsedCommand command;
-    State init_state;
-    State last_state;
-    Node* parent;
-    public:
-    
-    Line(ParsedCommand command): command(command), context(""), init_state(State{-1}), parent(nullptr), last_state(State{-1}) {}
 
-    void set_context(string context){
-        this->context = context;
-    }
+//ExCLUSIVO AUTOMATA
 
-    void set_actual_state(int id){
-        last_state.id = id;
-    }
-
-    void set_parent(Node* node){
-        this->parent = node;
-    }
-
-
-    Line* get_next_line() const {
-        return (parent && parent->next) ? parent->next->data : nullptr;
-    }
-
-    Line* get_prev_line() const {
-        return (parent && parent->prev) ? parent->prev->data : nullptr;
-    }
-
-    ~Line() = default;
-
-} Line;
-
-//ESCLUSIVO AUTOMATA
 enum CONTROL_STRUCT{
     NOTHING, //0
     IN_STRING, //1
@@ -107,9 +77,69 @@ typedef struct Block{
     PROCESS process;
     Block(CONTROL_STRUCT type, int state): control_struct(type), id_state(state), process(IN) {}
     Block(CONTROL_STRUCT type, int state, PROCESS process): control_struct(type), id_state(state), process(process) {}
+
+    bool operator==(const Block& other) const {
+        return control_struct == other.control_struct
+            && id_state == other.id_state
+            && process == other.process;
+    }
 } Block;
 
+struct AutomataContext {
+    int actual_state = 0;
+    CONTROL_STRUCT actual_passed;
+    vector<Block> blocks;
+    bool valid = true;
+    bool initialized = false; 
+
+    bool operator==(const AutomataContext& other) const {
+        return actual_state == other.actual_state
+            && actual_passed == other.actual_passed
+            && valid == other.valid
+            && blocks == other.blocks;
+    }
+};
+
+//no pero por las referencias
+typedef struct Line{
+    string context; 
+    ParsedCommand command;
+    State init_state;
+    State last_state;
+    Node* parent;
+    AutomataContext ctx_in;
+    AutomataContext ctx_out;
+    public:
+    
+    Line(ParsedCommand command): command(command), context(""), init_state(State{-1}), parent(nullptr), last_state(State{-1}) {}
+
+    void set_context(string context){
+        auto f = std::unique(context.begin(), context.end(), 
+        [](char a, char b) { return a == ' ' && b == ' '; });
+        
+        context.erase(f, context.end());
+        this->context = context;
+        cout<<"Context: "<<this->context;
+    }
+
+    void set_actual_state(int id){
+        last_state.id = id;
+    }
+
+    void set_parent(Node* node){
+        this->parent = node;
+    }
 
 
+    Line* get_next_line() const {
+        return (parent && parent->next) ? parent->next->data : nullptr;
+    }
 
+    Line* get_prev_line() const {
+        return (parent && parent->prev) ? parent->prev->data : nullptr;
+    }
+
+    ~Line() = default;
+
+} Line;
 #endif

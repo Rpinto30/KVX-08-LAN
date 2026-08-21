@@ -7,6 +7,7 @@
 #include <cctype>
 #include <algorithm>
 #include <queue>
+#include <unordered_map>
 
 #include "utils/dll_lines.h"
 #include "utils/json_writte.h"
@@ -165,19 +166,81 @@ void insert_one_forward(LineList& lines, Node*& node, int& col, char c){
     }
 }
 
+
 /*
 1) Ajustar lineas del IDE a DDL/Hash
 2) Enviar al automata el nuevo caracter ingresado
 3) Capturar y enviar a json
 */
 int Transitions::global_number = 0;
+map<int, std::vector<Transitions>> mapTransitions;
+afd::Automata automate;
+
+/*EXTRA AUOMTAMA */
+void build_full_json(LineList& lines, JsonWritter::TransitionsJson& json){
+    json.clear();
+    int global_no = 0;
+    int last_state = 0;
+    for (Node* node = lines.get_head(); node; node = node->next){
+        for (auto& t : mapTransitions[node->id]){
+            JsonWritter::TransitionJsonFragment frag{
+                global_no++, string(1, t.char_),
+                t.actual_state, t.new_state, ""
+            };
+            json.set_transition(frag);
+            last_state = t.new_state;
+        }
+    }
+    json.set_output(automate.get_output());
+    json.close_json();
+}
+
+bool process_single_line(Node* node, bool& error_found){
+    mapTransitions[node->id].clear();
+    for (char c : node->data->context){
+        automate.process_afd(c, node->id);
+
+        while (!automate.get_queue()->empty()){
+            Transitions t = automate.get_queue()->front();
+            mapTransitions[node->id].push_back(t);
+            automate.get_queue()->pop();
+        }
+    }
+    return true;
+}
+
+void cascade_reprocess(LineList& lines, Node* target){
+    automate.reset();
+    bool error_found = false;
+
+    Node* current = lines.get_head();
+    Node* last_processed = nullptr;
+
+    while (current){
+        process_single_line(current, error_found);
+        last_processed = current;
+
+        if (error_found) break;
+        if (current == target) break;
+
+        current = current->next;
+    }
+
+    if (last_processed){
+        for (Node* stale = last_processed->next; stale; stale = stale->next){
+            mapTransitions[stale->id].clear();
+        }
+    }
+}
+
+
 
 int main(){
     string path = std::filesystem::current_path().string();
     string command;
     LineList lines;
     JsonWritter::TransitionsJson json;
-    afd::Automata automate;
+    
 
     while (getline(std::cin, command))
     {
@@ -187,8 +250,8 @@ int main(){
         //==================INIT SECTION==================
         json.clear();
         ParsedCommand result = clear_command(command);
-        
         if (result.cmd_key == '@') { break; }
+        if (command[0] == ' ') continue;
         Node* it = lines.get_node(result.line_key);
 
         if (it == nullptr) {
@@ -209,24 +272,6 @@ int main(){
             }
         }
 
-        /*
-        if (result.cmd_key == '~'){
-            RangeCommand range = parse_range_command(command);
-            int count = range.end_index - range.start_index;
-
-            Node* cursor; int cursor_col;
-            if (locate_global_offset(lines, range.end_index, cursor, cursor_col)){
-                for (int i = 0; i < count && cursor; ++i){
-                    delete_one_backward(lines, cursor, cursor_col);
-                }
-                for (char c : range.text){
-                    insert_one_forward(lines, cursor, cursor_col, c);
-                }
-                it = cursor;
-            }
-        }*/
-
-
         //=================UPDATE SECTION=================
         if (result.cmd_key == '+'){
             Node* cursor = it;
@@ -242,9 +287,20 @@ int main(){
         }
 
         //=================PROCESS SECTION=================
-        automate.actualizar(command[0], lines.get_line(result.line_key));
+        //int dh = lines.get_line(result.line_key)->context.length()- lines.get_line(result.line_key)->command.col_key;
+        //if (dh == 1){
+        //    automate.process_afd(command[0], result.line_key);
+        //} else{
+        cascade_reprocess(lines, it);
+        //}
+        build_full_json(lines, json);
+        json.create_json(path+"/Automate/result/transitions.json");
+        
+        
+        /*
         while (!automate.get_queue()->empty()) {
             Transitions temp = automate.get_queue()->front(); 
+            mapTransitions[temp.line_index].push_back(temp);
             cout<<temp.char_<<endl;
             JsonWritter::TransitionJsonFragment transition{
                 temp.number,
@@ -255,7 +311,7 @@ int main(){
             };
             json.set_transition(transition);
             automate.get_queue()->pop(); 
-        }
+        }*/
 
         /*lines.for_each_node([&](Node* temp)
         {
@@ -273,9 +329,8 @@ int main(){
             delete transition;
         });*/
         
-        json.set_output(automate.get_output());
-        json.close_json();
-        json.create_json(path+"/Automate/result/transitions.json");
+        //json.set_output(automate.get_output());
+        //json.close_json();
         //cout<<"---------- LINEAS: "<<endl;
         //lines.for_each_lines([&](Line* line){});
     }

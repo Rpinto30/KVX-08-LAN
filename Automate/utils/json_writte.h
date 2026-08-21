@@ -141,7 +141,7 @@ class TransitionsJson {
             oss << "{\n" ;
 
             content = oss.str();
-            //clear_transitions();
+            clear_transitions();
             clear_errors();
         }
 
