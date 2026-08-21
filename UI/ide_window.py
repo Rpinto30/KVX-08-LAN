@@ -27,7 +27,7 @@
 
 import os
 import sys
-import subprocess
+import time
 import json
 from string import Template
 
@@ -38,15 +38,16 @@ from PyQt6.QtWidgets import (
     QGraphicsDropShadowEffect, QFileDialog, QMessageBox
 )
 from PyQt6.QtCore import Qt, QTimer, QSize, pyqtSignal, QThread
-from PyQt6.QtGui import QColor, QPainter, QAction, QPixmap
-
+from PyQt6.QtGui import QColor, QPainter, QAction, QPixmap,QPixmapCache
 
 from UI.code_editor import EditorPanel
 from UI.ascii_table import AsciiTablePanel
 from UI.automaton_table import AutomatonTablePanel
 from UI.process_worker import ProcessDrawer
+from UI.panel_diagramas import DiagramAnimationWorker
 
-
+CARPETA_DOT = "./Diagramas"
+CARPETA_SALIDA = "./Automate/result/diagramas"
 # ==============================================================================
 # SECCION: UTILIDADES DE ORNAMENTACION (glow neon)
 # ==============================================================================
@@ -210,6 +211,26 @@ class IDEWindow(QMainWindow):
         self._ruta_trace_json: str | None = None  # ruta del archivo a vigilar
         self._ultimo_mtime_trace: float | None = None  # para detectar cambios reales
         self.iniciar_polling_trace("./Automate/result/transitions.json", interval_ms=3000)
+
+        #diagramas
+        self.módulo_diagramas = {
+    1: ("assing_variables",  os.path.join(CARPETA_DOT, "assing_variables.dot"),
+                              os.path.join(CARPETA_SALIDA, "assing_variables.png")),
+    2: ("comments",          os.path.join(CARPETA_DOT, "comments.dot"),
+                              os.path.join(CARPETA_SALIDA, "comments.png")),
+    3: ("conditions",        os.path.join(CARPETA_DOT, "conditions.dot"),
+                              os.path.join(CARPETA_SALIDA, "conditions.png")),
+    4: ("loops",             os.path.join(CARPETA_DOT, "loops.dot"),
+                              os.path.join(CARPETA_SALIDA, "loops.png")),
+    5: ("string_conditions", os.path.join(CARPETA_DOT, "string_conditions.dot"),
+                              os.path.join(CARPETA_SALIDA, "string_conditions.png")),
+    6: ("strings",           os.path.join(CARPETA_DOT, "strings.dot"),
+                              os.path.join(CARPETA_SALIDA, "strings.png")),
+    7: ("variables",         os.path.join(CARPETA_DOT, "variables.dot"),
+                              os.path.join(CARPETA_SALIDA, "variables.png")),
+}
+        self.diagrama_actual_idx = 1 
+
 
     # --------------------------------------------------------------------
     # setupUI general: arma la ventana en bloques (barra de control, area
@@ -451,9 +472,10 @@ class IDEWindow(QMainWindow):
         
         bt_gen = QPushButton("Gen")
         bt_gen.setObjectName("botonClear")
-        # Conectamos directamente a nuestro método con animación
         bt_gen.clicked.connect(self.generar_imagenes)
         layout_cabecera.addWidget(bt_gen)
+        self.bt_gen = bt_gen          
+        self._worker_gen_diagramas = None
 
         layout.addWidget(cabecera)
 
@@ -470,52 +492,109 @@ class IDEWindow(QMainWindow):
         self.label_imagen = QLabel()
         self.label_imagen.setObjectName("visorImagen")
         self.label_imagen.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Mapeo de los 7 diagramas (rutas dot y png)
-        self.módulo_diagramas = {
-            1: ("assing_variables", os.path.join("../Diagramas", "assing_variables.dot"), os.path.join("../Automate/result/diagramas", "assing_variables.png")),
-            2: ("comments",         os.path.join("../Diagramas", "comments.dot"),         os.path.join("../Automate/result/diagramas", "comments.png")),
-            3: ("conditions",       os.path.join("../Diagramas", "conditions.dot"),       os.path.join("../Automate/result/diagramas", "conditions.png")),
-            4: ("loops",            os.path.join("../Diagramas", "loops.dot"),            os.path.join("../Automate/result/diagramas", "loops.png")),
-            5: ("string_conditions",os.path.join("../Diagramas", "string_conditions.dot"),os.path.join("../Automate/result/diagramas", "string_conditions.png")),
-            6: ("strings",          os.path.join("../Diagramas", "strings.dot"),          os.path.join("../Automate/result/diagramas", "strings.png")),
-            7: ("variables",        os.path.join("../Diagramas", "variables.dot"),        os.path.join("../Automate/result/diagramas", "variables.png")),
-        }
-
-        self.diagrama_actual_idx = 1
-
+        #self.label_imagen.setScaledContents(True) 
+        #self.label_imagen.setSizePolicy(
+        #    QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         def load_diagra(i):
-            self.diagrama_actual_idx = i
-            _, _, ruta_png = self.módulo_diagramas[i]
-            self.mostrar_imagen_en_label(ruta_png)
+            img = {
+                1:"./Automate/result/diagramas/assing_variables.png",
+                2:"./Automate/result/diagramas/comments.png",
+                3:"./Automate/result/diagramas/conditions.png",
+                4:"./Automate/result/diagramas/loops.png",
+                5:"./Automate/result/diagramas/string_conditions.png",
+                6:"./Automate/result/diagramas/strings.png",
+                7:"./Automate/result/diagramas/variables.png"
+            }
 
-        nombres = [v[0] for v in self.módulo_diagramas.values()]
-        self.botones_panel = []
+            if os.path.exists(img[i]):
+                pixmap = QPixmap(img[i])  
+                self.label_imagen.setFixedSize(650, 300) 
+                pixmap = pixmap.scaled(
+                    self.label_imagen.size(),                    
+                    Qt.AspectRatioMode.KeepAspectRatio,             
+                    Qt.TransformationMode.SmoothTransformation      
+                )
+                self.label_imagen.setPixmap(pixmap)
+                self.label_imagen.setScaledContents(True)
+
+        nombres = [
+            "assing_variables",
+            "comments",
+            "conditions",
+            "loops",
+            "string_conditions",
+            "strings",
+            "variables"
+        ]
+        self.botones_panel = []  # Referencia para conectar eventos externamente
         for i in range(1, 8):
             btn = QPushButton(f"BOTON {i}")
             btn.setText(nombres[i-1])
             btn.setObjectName(f"btnImagen_{i}")
-            btn.clicked.connect(lambda checked, idx=i: load_diagra(idx))
+            # Conectar acción enviando el índice del botón
+            btn.clicked.connect(
+                lambda checked, idx=i: load_diagra(idx)
+            )
             layout_botones.addWidget(btn)
             self.botones_panel.append(btn)
 
-        layout_botones.addStretch()
+        layout_botones.addStretch()  # Empuja los botones hacia arriba
         layout_principal.addLayout(layout_botones)
 
         # --- 2. COLUMNA DERECHA: VISOR DE IMAGEN ---
         self.label_imagen.setText("CARGANDO IMAGENES...")
         layout_principal.addWidget(self.label_imagen)
 
-        layout_principal.setStretch(0, 1)
-        layout_principal.setStretch(1, 3)
+        # Asignar proporciones de espacio entre la columna de botones y la imagen
+        layout_principal.setStretch(0, 1)  # Columna botones
+        layout_principal.setStretch(1, 3)  # Espacio imagen
+        #here
         layout.addWidget(self.panel_img)
 
         return panel
+    
+    def generar_imagenes(self):
+        if self._worker_gen_diagramas is not None and self._worker_gen_diagramas.isRunning():
+            self._console_log("> [Gen] Ya hay una animacion en curso.")
+            return
+
+        ruta_json = "./Automate/result/transitions.json"
+        mapeo_nodos = {100: "boolean", 101: "cadena"}
+
+        self._worker_gen_diagramas = DiagramAnimationWorker(
+            ruta_json=ruta_json,
+            modulo_diagramas=self.módulo_diagramas,
+            mapeo_nodos=mapeo_nodos,
+            carpeta_salida=CARPETA_SALIDA,
+            delay_ms=100,
+        )
+        self._worker_gen_diagramas.log.connect(self._console_log)
+        self._worker_gen_diagramas.paso_generado.connect(self._on_paso_diagrama_generado)
+        self._worker_gen_diagramas.paso_fallido.connect(
+            lambda paso, msg: self._console_log(f"> [Gen] Error en paso {paso}: {msg}")
+        )
+        self._worker_gen_diagramas.terminado.connect(self._on_generacion_terminada)
+
+        self.bt_gen.setEnabled(False)
+        self.bt_gen.setText("Generando...")
+        self._console_log("> [Gen] Iniciando generacion de animacion...")
+        self._worker_gen_diagramas.start()
+        
+    
+    def _on_paso_diagrama_generado(self, nombre_diagrama, ruta_png):
+        idx_nuevo = next(
+            (idx for idx, (nombre, _, _) in self.módulo_diagramas.items() if nombre == nombre_diagrama),
+            None,
+        )
+        if idx_nuevo is not None:
+            self.diagrama_actual_idx = idx_nuevo
+    
+        self.mostrar_imagen_en_label(ruta_png)
+    
 
     def mostrar_imagen_en_label(self, ruta_png):
-        """Método auxiliar para cargar y renderizar la imagen en self.label_imagen sin problemas de caché."""
         if os.path.exists(ruta_png):
-            QPixmapCache.clear()  # Invalida la caché de imágenes de PyQt
+            QPixmapCache.clear()
             pixmap = QPixmap(ruta_png)
             self.label_imagen.setFixedSize(650, 300)
             pixmap = pixmap.scaled(
@@ -526,90 +605,10 @@ class IDEWindow(QMainWindow):
             self.label_imagen.setPixmap(pixmap)
             self.label_imagen.setScaledContents(True)
 
-    def generar_imagenes(self):
-        """Genera imágenes paso a paso modificando y sobrescribiendo el archivo .png correspondiente."""
-        # 1. Cargar el JSON (Asegúrate de tener este método o ruta)
-        ruta_json = "./Automate/result/transitions.json"  # Cambia por tu ruta real
-        datos = self.__read_json(ruta_json) if hasattr(self, '__read_json') else {}
-        
-        if not datos:
-            print("No se encontraron datos en el JSON.")
-            return
-
-        transiciones = datos.get("transitions", [])
-        if not transiciones and "actual_state" in datos:
-            transiciones = [{"new_state": datos["actual_state"]}]
-
-        mapeo_nodos = {100: "boolean", 101: "cadena"}
-
-        # 2. Cargar en memoria las plantillas de los archivos DOT existentes
-        diagramas_dot = {}
-        for idx, (nombre, ruta_dot, ruta_png) in self.módulo_diagramas.items():
-            if os.path.exists(ruta_dot):
-                with open(ruta_dot, "r", encoding="utf-8") as f:
-                    diagramas_dot[idx] = {
-                        "nombre": nombre,
-                        "ruta_dot": ruta_dot,
-                        "ruta_png": ruta_png,
-                        "contenido": f.read(),
-                        "lineas": [line.strip() for line in f.read().splitlines()]
-                    }
-
-        # 3. Filtrar los pasos a procesar
-        pasos_a_procesar = []
-        for i, paso in enumerate(transiciones):
-            estado_id = paso.get("new_state", 0)
-            if estado_id == -1:
-                continue
-            nombre_nodo = mapeo_nodos.get(estado_id, f"q{estado_id}")
-            pasos_a_procesar.append((i + 1, nombre_nodo))
-
-        # 4. Procesar secuencia secuencialmente con 2 segundos de retraso
-        def procesar_paso(indice=0):
-            if indice >= len(pasos_a_procesar):
-                print("Animación finalizada exitosamente.")
-                return
-
-            num_paso, nombre_nodo = pasos_a_procesar[indice]
-
-            # Buscar en cuál diagrama está presente el nodo
-            for idx, diag in diagramas_dot.items():
-                nodo_encontrado = any(
-                    linea.startswith(f"{nombre_nodo} [") or linea.startswith(f"{nombre_nodo}[")
-                    for linea in diag["lineas"]
-                )
-
-                if nodo_encontrado:
-                    ruta_dot_temp = os.path.join(CARPETA_SALIDA, f"{diag['nombre']}_temp.dot")
-                    ruta_png_out = diag["ruta_png"]  # Sobrescribe la imagen con el mismo nombre
-
-                    # Modificar DOT agregando estilos de resaltado
-                    insertar_color = f'\n    {nombre_nodo} [style="filled", fillcolor="#b3ffcc", color="#00C853", penwidth=3.5];\n}}'
-                    dot_modificado = diag["contenido"].rpartition('}')[0] + insertar_color
-
-                    with open(ruta_dot_temp, "w", encoding="utf-8") as f_out:
-                        f_out.write(dot_modificado)
-
-                    try:
-                        # Renderizar imagen con Graphviz (Sobrescribe la existente)
-                        subprocess.run(["dot", "-Tpng", ruta_dot_temp, "-o", ruta_png_out], check=True)
-                        print(f"Paso {num_paso}: Nodo '{nombre_nodo}' resaltado en {diag['nombre']}.png")
-
-                        # Si la imagen procesada es la que el usuario tiene seleccionada en el visor, actualizar
-                        if self.diagrama_actual_idx == idx:
-                            self.mostrar_imagen_en_label(ruta_png_out)
-
-                    except subprocess.CalledProcessError as e:
-                        print(f"Error al compilar Graphviz en el paso {num_paso}: {e}")
-                    finally:
-                        if os.path.exists(ruta_dot_temp):
-                            os.remove(ruta_dot_temp)
-
-            # Programa el siguiente paso a los 2000 ms (2 segundos)
-            QTimer.singleShot(2000, lambda: procesar_paso(indice + 1))
-
-        # Inicia la animación inmediatamente con el paso 0
-        procesar_paso(0)
+    def _on_generacion_terminada(self):
+        self.bt_gen.setEnabled(True)
+        self.bt_gen.setText("Gen")
+        self._console_log("> [Gen] Animacion finalizada.")
     
     # --------------------------------------------------------------------
     # SECCION: Pie de pagina decorativo (prompt + version del "sistema")
@@ -816,10 +815,15 @@ class IDEWindow(QMainWindow):
         self.panel_editor.set_tema_actual(clave)
 
     def closeEvent(self, event):
+        #self.request_stop.emit()
+        #self.thread.quit()
+        #self.thread.wait()
+        if getattr(self, "_worker_gen_diagramas", None) is not None and self._worker_gen_diagramas.isRunning():
+                self._worker_gen_diagramas.solicitar_detener()
+                self._worker_gen_diagramas.wait(2000)
         self.request_stop.emit()
         self.thread.quit()
-        #self.thread.wait()
-        QTimer.singleShot(50, event.accept)
+        QTimer.singleShot(100, event.accept)
         
 
     # --------------------------------------------------------------------

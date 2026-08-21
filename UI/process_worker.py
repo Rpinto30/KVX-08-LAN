@@ -99,14 +99,6 @@ class ProcessDrawer(QObject):
             self.stop_process()
             
     @pyqtSlot()
-    def generate_animation(self):
-        self.creating_image = True
-        try:
-            generar_diagramas(self.RUTA_JSON, self.CARPETA_DIAGRAMAS)
-        finally:
-            self.stop_process()
-
-    @pyqtSlot()
     def stop_process(self):
         self.creating_image = False
         self.finished.emit()
